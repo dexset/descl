@@ -1,0 +1,15 @@
+{
+	"name": "descl",
+    "description": "D Extended Set CL",
+    "authors": ["Oleg Butko(deviator)", "Anton Akzhigitov(Akzwar)"],
+    "license": "MIT",
+	"targetType": "sourceLibrary",
+	"importPaths": [ "import" ],
+	"sourcePaths": [ "import" ],
+	"dependencies": {
+        "descore": "~master",
+        "des": "~master",
+        "derelict": "~master",
+        "derelict_extras-opencl": "~master"
+	}
+}
