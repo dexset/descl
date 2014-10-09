@@ -1,9 +1,9 @@
-module descl.glinterop.memory;
+module des.cl.glinterop.memory;
 
-import desgl.base;
-import descl.base;
-import descl.memory;
-import descl.commandqueue;
+import des.gl.base;
+import des.cl.base;
+import des.cl.memory;
+import des.cl.commandqueue;
 
 import descl.glinterop.context;
 

@@ -1,4 +1,4 @@
-module descl.base;
+module des.cl.base;
 
 public import derelict.opencl.cl;
 

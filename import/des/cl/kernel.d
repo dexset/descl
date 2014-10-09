@@ -1,13 +1,13 @@
-module descl.kernel;
+module des.cl.kernel;
 
 import std.string;
 import std.traits;
 
-import descl.base;
-import descl.event;
-import descl.memory;
-import descl.commandqueue;
-import descl.program;
+import des.cl.base;
+import des.cl.event;
+import des.cl.memory;
+import des.cl.commandqueue;
+import des.cl.program;
 
 class CLKernel : CLReference
 {

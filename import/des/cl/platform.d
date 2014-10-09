@@ -1,6 +1,6 @@
-module descl.platform;
+module des.cl.platform;
 
-import descl.base;
+import des.cl.base;
 
 class CLPlatform
 {

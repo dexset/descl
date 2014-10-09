@@ -1,7 +1,7 @@
-module descl.device;
+module des.cl.device;
 
-import descl.base;
-import descl.platform;
+import des.cl.base;
+import des.cl.platform;
 
 class CLDevice : CLReference
 {

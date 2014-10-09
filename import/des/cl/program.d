@@ -1,8 +1,8 @@
-module descl.program;
+module des.cl.program;
 
-import descl.base;
-import descl.device;
-import descl.context;
+import des.cl.base;
+import des.cl.device;
+import des.cl.context;
 
 class CLProgram : CLReference
 {

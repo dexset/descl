@@ -1,7 +1,7 @@
-module descl.event;
+module des.cl.event;
 
-import descl.base;
-import descl.context;
+import des.cl.base;
+import des.cl.context;
 
 class CLEvent : CLReference
 {

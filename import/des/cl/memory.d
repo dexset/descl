@@ -1,11 +1,11 @@
-module descl.memory;
+module des.cl.memory;
 
 import std.traits;
 
-import descl.base;
-import descl.context;
-import descl.event;
-import descl.commandqueue;
+import des.cl.base;
+import des.cl.context;
+import des.cl.event;
+import des.cl.commandqueue;
 
 class CLMemory
 {

@@ -1,8 +1,8 @@
-module descl.context;
+module des.cl.context;
 
-import descl.base;
-import descl.device;
-import descl.platform;
+import des.cl.base;
+import des.cl.device;
+import des.cl.platform;
 
 class CLContext : CLReference
 {
