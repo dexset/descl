@@ -5,7 +5,7 @@ import des.cl.base;
 import des.cl.memory;
 import des.cl.commandqueue;
 
-import descl.glinterop.context;
+import des.cl.glinterop.context;
 
 class CLGLMemory : CLMemory
 {
