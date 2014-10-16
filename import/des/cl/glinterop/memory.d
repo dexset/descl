@@ -31,19 +31,19 @@ public:
         int retcode;
         CLMemory.Type tp;
         cl_mem id;
-        if( texture.type == texture.Target.T2D )
+        if( texture.target == texture.Target.T2D )
         {
-            id = clCreateFromGLTexture2D( context.id, flags, texture.type, 
+            id = clCreateFromGLTexture2D( context.id, flags, texture.target, 
                                             0, texture.id, &retcode );
             tp = Type.IMAGE2D;
         }
-        else if( texture.type == texture.Target.T3D )
+        else if( texture.target == texture.Target.T3D )
         {
-            id = clCreateFromGLTexture3D( context.id, flags, texture.type, 
+            id = clCreateFromGLTexture3D( context.id, flags, texture.target, 
                                             0, texture.id, &retcode );
             tp = Type.IMAGE3D;
         }
-        else throw new CLException( format( "unsupported gl texture type %s", texture.type) );
+        else throw new CLException( format( "unsupported gl texture type %s", texture.target) );
         checkError( retcode, "clCreateFromGLTexture" );
         return new CLGLMemory( id, tp, flags );
     }
