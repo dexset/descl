@@ -7,7 +7,7 @@ import des.cl.context;
 import des.cl.event;
 import des.cl.commandqueue;
 
-class CLMemory
+class CLMemory : CLReference
 {
 package cl_mem id;
 
