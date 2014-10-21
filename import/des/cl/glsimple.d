@@ -41,7 +41,7 @@ import des.math.linear;
 }
 
 
-interface CLMemoryBuffer
+interface CLMemoryHandler
 {
     protected @property CLGLMemory clmem();
     protected @property void clmem( CLGLMemory );
@@ -49,17 +49,14 @@ interface CLMemoryBuffer
     static @property string getCLMemProperty()
     {
         return `
-            protected
-            {
-                CLGLMemory clglmemory;
-                @property CLGLMemory clmem() { return clglmemory; }
-                @property void clmem( CLGLMemory m )
-                in{ assert( m !is null ); } body
-                { clglmemory = m; }
-
-                final void clInit() { CLGL.initBuffer( this ); }
-            }
-        `;
+        protected
+        {
+            CLGLMemory clglmemory;
+            @property CLGLMemory clmem() { return clglmemory; }
+            @property void clmem( CLGLMemory m )
+            in{ assert( m !is null ); } body
+            { clglmemory = m; }
+        }`;
     }
 }
 
@@ -82,8 +79,8 @@ public:
 
     void setArg(T)( uint index, T arg )
     {
-        static if( is( T : CLMemoryBuffer ) )
-            kernel.setArg( index, (cast(CLMemoryBuffer)arg).clmem );
+        static if( is( T : CLMemoryHandler ) )
+            kernel.setArg( index, (cast(CLMemoryHandler)arg).clmem );
         else static if( isStaticVector!T )
             kernel.setArg( index, arg.data );
         else static if( isStaticMatrix!T )
@@ -111,7 +108,7 @@ private:
 
     CLReference[] clrefs;
 
-    CLMemoryBuffer[] acquire_list;
+    CLMemoryHandler[] acquire_list;
 
     this()
     {
@@ -130,7 +127,7 @@ private:
         return clgl;
     }
 
-    void acquireList( CLMemoryBuffer[] list... )
+    void acquireList( CLMemoryHandler[] list... )
     {
         glFlush();
         glFinish();
@@ -149,10 +146,31 @@ private:
         cmdqueue.flush();
     }
 
-    void initMemoryBuffer(T)( T mb )
-        if( is( T : CLMemoryBuffer ) && is( T : GLBuffer ) )
+    void initCLMemory(T)( T mb )
+        if( is( T : CLMemoryHandler ) )
     {
-        (cast(CLMemoryBuffer)mb).clmem = registerCLRef( CLGLMemory.createFromGLBuffer( context,
+        static if( is( T : GLBuffer ) )
+            initMemoryBuffer( mb );
+        else static if( is( T : GLTexture ) )
+            initMemoryTexture( mb );
+        else
+        {
+            pragma(msg,"ERROR: unsuported type '", T, "' for CL memory" );
+            static assert(0);
+        }
+    }
+
+    void initMemoryBuffer(T)( T mb )
+        if( is( T : CLMemoryHandler ) && is( T : GLBuffer ) )
+    {
+        (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLBuffer( context,
+                                        CLMemory.Flags.READ_WRITE, mb ) );
+    }
+
+    void initMemoryTexture(T)( T mb )
+        if( is( T : CLMemoryHandler ) && is( T : GLTexture ) )
+    {
+        (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLTexture( context,
                                         CLMemory.Flags.READ_WRITE, mb ) );
     }
 
@@ -182,7 +200,7 @@ private:
 public static
 {
 
-    void acquireFromGL( CLMemoryBuffer[] list... )
+    void acquireFromGL( CLMemoryHandler[] list... )
     { singleton.acquireList( list ); }
 
     SimpleCLKernel[string] build( string[] args... )
@@ -191,9 +209,9 @@ public static
 
     void releaseToGL() { singleton.releaseList(); }
 
-    void initBuffer(T)( T mb )
-        if( is( T : CLMemoryBuffer ) && is( T : GLBuffer ) )
-    { singleton.initMemoryBuffer( mb ); }
+    void initMemory(T)( T mb )
+        if( is( T : CLMemoryHandler ) )
+    { singleton.initCLMemory( mb ); }
 
     void systemDestroy()
     {
