@@ -20,7 +20,11 @@ class CLKernel : CLReference
         checkError( retcode, "clCreateKernel" );
     }
 
-    void setArgs(Args...)( Args args ) { _setArgs(0,args); }
+    void setArgs(Args...)( Args args )
+    {
+        foreach( i, arg; args )
+            setArg( i, arg );
+    }
 
     void exec( CLCommandQueue command_queue, uint dim, size_t[] global_work_offset,
             size_t[] global_work_size, size_t[] local_work_size,
@@ -45,42 +49,34 @@ class CLKernel : CLReference
 
     void release() { checkCall!(clReleaseKernel)(id); }
 
-    private void _setArgs(Args...)( uint index, Args args )
+    void setArg(Arg)( uint index, Arg arg )
     {
-        static if( args.length > 1 )
+        void *value;
+        size_t size;
+
+        static if( is( Arg : CLMemory ) )
         {
-            _setArgs(index,args[0]);
-            _setArgs(index+1,args[1 .. $]);
+            auto aid = (cast(CLMemory)arg).id;
+            value = &aid;
+            size = aid.sizeof;
+        }
+        else static if( !hasIndirections!Arg )
+        {
+            value = &arg;
+            size = arg.sizeof;
         }
         else
         {
-            alias Args[0] Arg;
-            auto arg = args[0];
+            pragma(msg, "type of ", Arg, " couldn't be set as kernel argument" );
+            static assert(0);
+        }
 
-            void *value;
-            size_t size;
-
-            static if( is( Arg : CLMemory ) )
-            {
-                auto aid = (cast(CLMemory)arg).id;
-                value = &aid;
-                size = aid.sizeof;
-            }
-            else static if( !hasIndirections!Arg )
-            {
-                value = &arg;
-                size = arg.sizeof;
-            }
-            else static assert( 0, format( "type %s couldn't be "~
-                        "set as kernel argument", typeid(Arg) ) );
-
-            clSetKernelArg( id, index, size, value );
-            debug(printkernelargs)
-            {
-                import std.stdio;
-                stderr.writefln( "set '%s' arg #%d: %s %s", 
-                        Arg.stringof, index, size, value );
-            }
+        clSetKernelArg( id, index, size, value );
+        debug(printkernelargs)
+        {
+            import std.stdio;
+            stderr.writefln( "set '%s' arg #%d: %s %s", 
+                    Arg.stringof, index, size, value );
         }
     }
 }
