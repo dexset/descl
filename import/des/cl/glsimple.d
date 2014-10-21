@@ -1,5 +1,6 @@
 module des.cl.glsimple;
 
+import std.string;
 import std.traits;
 
 import des.gl.base;
@@ -20,6 +21,25 @@ public import des.cl.kernel;
 public import des.cl.glinterop.memory;
 
 import des.math.linear;
+
+/++ cl kernel declaration must have keyword "kernel" or "__kernel__" and
+    name of kernel at one line +/
+@property string[] staticLoadCLSource(string name)()
+{
+    auto src = import( name );
+    string[] kernels;
+    foreach( ln; src.splitLines )
+    {
+        auto cln = ln.strip;
+        if( cln.startsWith("kernel") || cln.startsWith("__kernel__") )
+        {
+            auto kname = cln.split[2];
+            kernels ~= kname.endsWith("(") ? kname[0..$-1] : kname;
+        }
+    }
+    return src ~ kernels;
+}
+
 
 interface CLMemoryBuffer
 {
@@ -165,8 +185,9 @@ public static
     void acquireFromGL( CLMemoryBuffer[] list... )
     { singleton.acquireList( list ); }
 
-    SimpleCLKernel[string] build( string src, string[] kernels... )
-    { return singleton.buildProgramAndGetKernels( src, kernels ); }
+    SimpleCLKernel[string] build( string[] args... )
+    in{ assert( args.length > 1 ); } body
+    { return singleton.buildProgramAndGetKernels( args[0], args[1..$] ); }
 
     void releaseToGL() { singleton.releaseList(); }
 
