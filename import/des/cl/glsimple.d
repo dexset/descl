@@ -1,5 +1,6 @@
 module des.cl.glsimple;
 
+import std.stdio;
 import std.string;
 import std.traits;
 
@@ -79,13 +80,20 @@ public:
 
     void setArg(T)( uint index, T arg )
     {
-        static if( is( T : CLMemoryHandler ) )
-            kernel.setArg( index, (cast(CLMemoryHandler)arg).clmem );
-        else static if( isStaticVector!T )
-            kernel.setArg( index, arg.data );
-        else static if( isStaticMatrix!T )
-            kernel.setArg( index, arg.data );
-        else kernel.setArg( index, arg );
+        try
+        {
+            static if( is( T : CLMemoryHandler ) )
+                kernel.setArg( index, (cast(CLMemoryHandler)arg).clmem );
+            else static if( isStaticVector!T )
+                kernel.setArg( index, arg.data );
+            else static if( isStaticMatrix!T )
+                kernel.setArg( index, arg.data );
+            else kernel.setArg( index, arg );
+        } catch( CLException e )
+        {
+            stderr.writefln( "### CL ERROR: exception while setArg( %d, %s )", index, arg );
+            throw e;
+        }
     }
 
     void exec( uint dim, size_t[] global_work_offset,

@@ -71,7 +71,7 @@ class CLKernel : CLReference
             static assert(0);
         }
 
-        clSetKernelArg( id, index, size, value );
+        checkCall!(clSetKernelArg)( id, index, size, value );
         debug(printkernelargs)
         {
             import std.stdio;
