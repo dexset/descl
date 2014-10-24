@@ -161,6 +161,8 @@ private:
             initMemoryBuffer( mb );
         else static if( is( T : GLTexture ) )
             initMemoryTexture( mb );
+        else static if( is( T : GLRenderBuffer ) )
+            initMemoryRenderBuffer( mb );
         else
         {
             pragma(msg,"ERROR: unsuported type '", T, "' for CL memory" );
@@ -170,17 +172,15 @@ private:
 
     void initMemoryBuffer(T)( T mb )
         if( is( T : CLMemoryHandler ) && is( T : GLBuffer ) )
-    {
-        (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLBuffer( context,
-                                        CLMemory.Flags.READ_WRITE, mb ) );
-    }
+    { (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLBuffer(context,mb) ); }
 
     void initMemoryTexture(T)( T mb )
         if( is( T : CLMemoryHandler ) && is( T : GLTexture ) )
-    {
-        (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLTexture( context,
-                                        CLMemory.Flags.READ_WRITE, mb ) );
-    }
+    { (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLTexture(context,mb) ); }
+
+    void initMemoryRenderBuffer(T)( T mb )
+        if( is( T : CLMemoryHandler ) && is( T : GLRenderBuffer ) )
+    { (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLRenderBuffer(context,mb) ); }
 
     SimpleCLKernel[string] buildProgramAndGetKernels( string src, string[] kernels )
     {
