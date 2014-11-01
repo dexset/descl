@@ -6,13 +6,12 @@ import des.cl.platform;
 
 class CLContext : CLReference
 {
-package cl_context id;
-package CLPlatform platform;
+protected CLPlatform platform;
 
 private bool inited = false;
-package bool isInited() const { return inited; }
 
 public:
+    cl_context id;
 
     this( CLPlatform pl ) { this.platform = pl; }
 
@@ -60,13 +59,15 @@ public:
 
     mixin( infoProperties( "context", prop_list ) );
 
-    void release()
+    bool isInited() const { return inited; }
+
+protected:
+
+    override void selfDestroy()
     {
         checkCall!(clReleaseContext)(id);
         inited = false;
     }
-
-protected:
 
     cl_context_properties[] getProperties()
     {

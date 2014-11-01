@@ -6,24 +6,18 @@ import des.cl.context;
 class CLEvent : CLReference
 {
 package:
-    cl_event id;
-
-    this( cl_event id )
-    {
-        this.id = id;
-    }
+    this( cl_event ev_id ) { id = ev_id; }
 
 public:
+    cl_event id;
 
     CLEvent createUserEvent( CLContext context )
     {
         int retcode;
-        auto id = clCreateUserEvent( context.id, &retcode );
+        auto ev_id = clCreateUserEvent( context.id, &retcode );
         checkError( retcode, "clCreateUserEvent" );
-        return new CLEvent( id );
+        return new CLEvent( ev_id );
     }
-
-    void release() { checkCall!(clReleaseEvent)(id); }
 
     enum CommandType
     {
@@ -61,4 +55,7 @@ public:
     ];
 
     mixin( infoProperties( "event", prop_list ) );
+
+protected:
+    override void selfDestroy() { checkCall!(clReleaseEvent)(id); }
 }

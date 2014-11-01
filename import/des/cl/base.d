@@ -11,6 +11,8 @@ package
     import std.array;
 }
 
+public import des.util.emm;
+
 static this()
 {
     DerelictCL.load();
@@ -23,9 +25,10 @@ class CLException : Exception
     { super( msg, file, line ); }
 }
 
-interface CLReference
+class CLReference : ExternalMemoryManager
 {
-    void release();
+    mixin DirectEMM;
+    protected abstract void selfDestroy();
 }
 
 package

@@ -6,14 +6,13 @@ import des.cl.context;
 
 class CLProgram : CLReference
 {
-package cl_program id;
-
 protected:
+    this( cl_program p_id ) { this.id = p_id; }
 
-    this( cl_program id ) { this.id = id; }
     CLDevice[] last_build_devices;
 
 public:
+    cl_program id;
 
     static CLProgram createWithSource( CLContext context, string source )
     {
@@ -26,8 +25,6 @@ public:
 
         return new CLProgram(id);
     }
-
-    void release() { checkCall!(clReleaseProgram)(id); }
 
     void build( CLDevice[] devices, CLBuildOption[] options=[] )
     {
@@ -67,6 +64,8 @@ public:
     }
 
 protected:
+
+    override void selfDestroy() { checkCall!(clReleaseProgram)(id); }
 
     auto getOptionsStringz( CLBuildOption[] options )
     {

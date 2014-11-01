@@ -105,8 +105,9 @@ public:
     }
 }
 
-final class CLGL
+final class CLGL : ExternalMemoryManager
 {
+    mixin ParentEMM;
 private:
     static CLGL clgl;
 
@@ -114,19 +115,17 @@ private:
     CLGLContext context;
     CLDevice[] devices;
 
-    CLReference[] clrefs;
-
     CLMemoryHandler[] acquire_list;
 
     this()
     {
         auto platform = CLPlatform.getAll()[0];
-        devices = registerCLRef( CLDevice.getAll( platform ) );
+        devices = registerChildEMM( CLDevice.getAll( platform ) );
 
-        context = registerCLRef( new CLGLContext( platform ) );
+        context = registerChildEMM( new CLGLContext( platform ) );
         context.initializeFromType( CLDevice.Type.GPU );
 
-        cmdqueue = registerCLRef( new CLCommandQueue( context, devices[0] ) );
+        cmdqueue = registerChildEMM( new CLCommandQueue( context, devices[0] ) );
     }
 
     static @property CLGL singleton()
@@ -172,19 +171,19 @@ private:
 
     void initMemoryBuffer(T)( T mb )
         if( is( T : CLMemoryHandler ) && is( T : GLBuffer ) )
-    { (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLBuffer(context,mb) ); }
+    { (cast(CLMemoryHandler)mb).clmem = registerChildEMM( CLGLMemory.createFromGLBuffer(context,mb) ); }
 
     void initMemoryTexture(T)( T mb )
         if( is( T : CLMemoryHandler ) && is( T : GLTexture ) )
-    { (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLTexture(context,mb) ); }
+    { (cast(CLMemoryHandler)mb).clmem = registerChildEMM( CLGLMemory.createFromGLTexture(context,mb) ); }
 
     void initMemoryRenderBuffer(T)( T mb )
         if( is( T : CLMemoryHandler ) && is( T : GLRenderBuffer ) )
-    { (cast(CLMemoryHandler)mb).clmem = registerCLRef( CLGLMemory.createFromGLRenderBuffer(context,mb) ); }
+    { (cast(CLMemoryHandler)mb).clmem = registerChildEMM( CLGLMemory.createFromGLRenderBuffer(context,mb) ); }
 
     SimpleCLKernel[string] buildProgramAndGetKernels( string src, string[] kernels )
     {
-        auto program = registerCLRef( CLProgram.createWithSource( context, src ) );
+        auto program = registerChildEMM( CLProgram.createWithSource( context, src ) );
 
         try program.build( devices, [ CLBuildOption.fastRelaxedMath ] );
         catch( CLException e )
@@ -198,15 +197,14 @@ private:
 
         foreach( k; kernels )
         {
-            auto clk = registerCLRef( new CLKernel( program, k ) );
+            auto clk = registerChildEMM( new CLKernel( program, k ) );
             ret[k] = new SimpleCLKernel( clk );
         }
 
         return ret;
     }
 
-public static
-{
+public static:
 
     void acquireFromGL( CLMemoryHandler[] list... )
     { singleton.acquireList( list ); }
@@ -223,29 +221,7 @@ public static
 
     void systemDestroy()
     {
-        singleton.destroyCLRefs();
+        singleton.destroy();
         clgl = null;
-    }
-}
-
-private:
-
-    auto registerCLRef(T)( T[] objs ) if( is( T : CLReference ) )
-    {
-        foreach( obj; objs )
-            clrefs ~= cast(CLReference)obj;
-        return objs;
-    }
-
-    auto registerCLRef(T)( T obj ) if( is( T : CLReference ) )
-    {
-        clrefs ~= cast(CLReference)obj;
-        return obj;
-    }
-
-    void destroyCLRefs()
-    {
-        foreach( obj; clrefs )
-            obj.release();
     }
 }

@@ -5,10 +5,8 @@ import des.cl.platform;
 
 class CLDevice : CLReference
 {
-package cl_device_id id;
-package CLPlatform platform;
-
 protected:
+    CLPlatform platform;
     
     bool is_sub_device;
 
@@ -21,6 +19,7 @@ protected:
     }
 
 public:
+    cl_device_id id;
 
     static CLDevice[] getAll( CLPlatform platform, Type type=Type.DEFAULT )
     {
@@ -34,8 +33,6 @@ public:
             buf ~= new CLDevice( id, platform, false );
         return buf;
     }
-
-    void release() { if( is_sub_device ) checkCall!(clReleaseDevice)( id ); }
 
     enum FPConfig
     {
@@ -143,4 +140,13 @@ public:
     ];
 
     mixin( infoProperties( "device", prop_list ) );
+
+protected:
+
+    override void selfDestroy()
+    {
+        if( is_sub_device )
+            checkCall!(clReleaseDevice)( id );
+    }
+
 }

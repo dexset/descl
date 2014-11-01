@@ -9,18 +9,16 @@ import des.cl.commandqueue;
 
 class CLMemory : CLReference
 {
-package cl_mem id;
-
 protected:
-
-    this( cl_mem id, Type type, Flag[] flags )
+    this( cl_mem mem_id, Type type, Flag[] flags )
     {
-        this.id = id;
+        this.id = mem_id;
         this._type = type;
         this._flags = flags.dup;
     }
 
 public:
+    cl_mem id;
 
     enum Type
     {
@@ -96,5 +94,6 @@ public:
 
     // TODO: map
 
-    void release() { checkCall!(clReleaseMemObject)(id); }
+protected:
+    override void selfDestroy() { checkCall!(clReleaseMemObject)(id); }
 }

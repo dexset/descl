@@ -11,7 +11,8 @@ import des.cl.program;
 
 class CLKernel : CLReference
 {
-    package cl_kernel id;
+public:
+    cl_kernel id;
 
     this( CLProgram program, string name )
     {
@@ -47,8 +48,6 @@ class CLKernel : CLReference
                 (event is null ? null : &(event.id)) );
     }
 
-    void release() { checkCall!(clReleaseKernel)(id); }
-
     void setArg(Arg)( uint index, Arg arg )
     {
         void *value;
@@ -79,4 +78,9 @@ class CLKernel : CLReference
                     Arg.stringof, index, size, value );
         }
     }
+
+protected:
+
+    override void selfDestroy() { checkCall!(clReleaseKernel)(id); }
+
 }
