@@ -7,7 +7,7 @@
 	"importPaths": [ "import" ],
 	"sourcePaths": [ "import" ],
 	"dependencies": {
-        "descore": "~master",
+        "descore": ">=1.0.2",
         "des": "~master",
         "derelict": "~master",
         "derelict_extras-opencl": "~master"
