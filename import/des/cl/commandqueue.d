@@ -1,14 +1,12 @@
-module descl.commandqueue;
+module des.cl.commandqueue;
 
-import descl.base;
-import descl.device;
-import descl.context;
+import des.cl.base;
+import des.cl.device;
+import des.cl.context;
 
 class CLCommandQueue : CLReference
 {
-package cl_command_queue id;
-
-public:
+    cl_command_queue id;
 
     enum Properties
     {
@@ -25,9 +23,10 @@ public:
         checkError( retcode, "clCreateCommandQueue" );
     }
 
-    void release() { checkCall!(clReleaseCommandQueue)(id); }
-
     void flush() { clFlush(id); }
 
     // TODO info
+
+    protected override void selfDestroy()
+    { checkCall!(clReleaseCommandQueue)(id); }
 }

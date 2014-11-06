@@ -1,20 +1,18 @@
-module descl.platform;
+module des.cl.platform;
 
-import descl.base;
+import des.cl.base;
 
 class CLPlatform
 {
-package cl_platform_id id;
 
-protected:
-
-    this( cl_platform_id id )
+    this( cl_platform_id pl_id )
     {
-        this.id = id;
+        this.id = pl_id;
         updateProperties();
     }
 
 public:
+    cl_platform_id id;
 
     static CLPlatform[] getAll()
     {

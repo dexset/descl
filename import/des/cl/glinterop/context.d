@@ -1,9 +1,9 @@
-module descl.glinterop.context;
+module des.cl.glinterop.context;
 
-import descl.base;
-import descl.device;
-import descl.platform;
-import descl.context;
+import des.cl.base;
+import des.cl.device;
+import des.cl.platform;
+import des.cl.context;
 
 class CLGLContext : CLContext
 {
