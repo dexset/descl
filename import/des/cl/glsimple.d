@@ -103,6 +103,20 @@ public:
         kernel.exec( CLGL.singleton.cmdqueue, dim, global_work_offset,
                 global_work_size, local_work_size, wait_list, event );
     }
+
+    void opCall(Args...)( size_t[] g_work_size, size_t[] l_work_size, Args args )
+    in
+    {
+        assert(g_work_size.length <= 3);
+        assert(g_work_size.length == l_work_size.length);
+    }
+    body
+    {
+        setArgs( args );
+        uint dim = cast(uint)g_work_size.length;
+        auto g_work_offset = new size_t[](dim);
+        exec( dim, g_work_offset, g_work_size, l_work_size );
+    }
 }
 
 final class CLGL : ExternalMemoryManager
