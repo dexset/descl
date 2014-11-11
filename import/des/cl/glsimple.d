@@ -150,7 +150,6 @@ private:
 
     void acquireList( CLMemoryHandler[] list... )
     {
-        glFlush();
         glFinish();
 
         acquire_list = list;
@@ -164,7 +163,7 @@ private:
             obj.clmem.releaseToGL( cmdqueue );
         acquire_list.length = 0;
 
-        cmdqueue.flush();
+        cmdqueue.finish();
     }
 
     void initCLMemory(T)( T mb )

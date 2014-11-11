@@ -24,6 +24,7 @@ class CLCommandQueue : CLReference
     }
 
     void flush() { clFlush(id); }
+    void finish() { clFinish(id); }
 
     // TODO info
 
