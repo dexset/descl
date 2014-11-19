@@ -1,26 +1,24 @@
-module descl.memory;
+module des.cl.memory;
 
 import std.traits;
 
-import descl.base;
-import descl.context;
-import descl.event;
-import descl.commandqueue;
+import des.cl.base;
+import des.cl.context;
+import des.cl.event;
+import des.cl.commandqueue;
 
-class CLMemory
+class CLMemory : CLReference
 {
-package cl_mem id;
-
 protected:
-
-    this( cl_mem id, Type type, ulong flags )
+    this( cl_mem mem_id, Type type, Flag[] flags )
     {
-        this.id = id;
+        this.id = mem_id;
         this._type = type;
-        this._flags = flags;
+        this._flags = flags.dup;
     }
 
 public:
+    cl_mem id;
 
     enum Type
     {
@@ -32,7 +30,7 @@ public:
     private Type _type;
     @property Type type() const { return _type; }
 
-    enum Flags
+    enum Flag
     {
         READ_WRITE     = CL_MEM_READ_WRITE,
         WRITE_ONLY     = CL_MEM_WRITE_ONLY,
@@ -44,20 +42,17 @@ public:
 
     static pure
     {
-        bool checkFlags( ulong flags ) { return filterFlags(flags) == flags; }
-
-        ulong filterFlags( ulong flags )
-        { return reduce!((r,f)=>r|=(flags&f)?f:0UL)(0UL,[EnumMembers!Flags]); }
+        ulong compileFlags( Flag[] flags... )
+        { return reduce!((r,f)=>r|=cast(ulong)f)(0UL,flags); }
     }
 
-    private ulong _flags;
-    @property ulong flags() const { return _flags; }
+    private Flag[] _flags;
+    @property const(Flag[]) flags() const { return _flags; }
 
-    static CLMemory createBuffer( CLContext context, ulong flags, size_t size, void* host_ptr=null )
-    in { assert( checkFlags( flags ) ); } body 
+    static CLMemory createBuffer( CLContext context, Flag[] flags, size_t size, void* host_ptr=null )
     {
         int retcode;
-        auto id = clCreateBuffer( context.id, flags, size, host_ptr, &retcode );
+        auto id = clCreateBuffer( context.id, compileFlags(flags), size, host_ptr, &retcode );
         checkError( retcode, "clCreateBuffer" );
 
         return new CLMemory( id, Type.BUFFER, flags );
@@ -99,5 +94,6 @@ public:
 
     // TODO: map
 
-    void release() { checkCall!(clReleaseMemObject)(id); }
+protected:
+    override void selfDestroy() { checkCall!(clReleaseMemObject)(id); }
 }

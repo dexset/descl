@@ -1,6 +1,6 @@
-module descl.helpers;
+module des.cl.helpers;
 
-import descl;
+import des.cl;
 
 string getCLDeviceFullInfoString( CLDevice dev, string fmt="", string sep="\n" )
 {

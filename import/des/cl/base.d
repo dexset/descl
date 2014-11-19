@@ -1,4 +1,4 @@
-module descl.base;
+module des.cl.base;
 
 public import derelict.opencl.cl;
 
@@ -10,6 +10,8 @@ package
     import std.algorithm;
     import std.array;
 }
+
+public import des.util.emm;
 
 static this()
 {
@@ -23,9 +25,10 @@ class CLException : Exception
     { super( msg, file, line ); }
 }
 
-interface CLReference
+class CLReference : ExternalMemoryManager
 {
-    void release();
+    mixin DirectEMM;
+    protected abstract void selfDestroy();
 }
 
 package
