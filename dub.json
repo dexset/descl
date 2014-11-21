@@ -1,6 +1,6 @@
 {
 	"name": "descl",
-    "description": "D Extended Set CL",
+    "description": "D Extended Set OpenCL wraps",
     "authors": ["Oleg Butko(deviator)", "Anton Akzhigitov(Akzwar)"],
     "license": "MIT",
 	"targetType": "sourceLibrary",

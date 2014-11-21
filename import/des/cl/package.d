@@ -11,6 +11,4 @@ public
     import des.cl.program;
     import des.cl.kernel;
     import des.cl.event;
-
-    import des.cl.glinterop;
 }
