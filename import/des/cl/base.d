@@ -37,6 +37,10 @@ class CLResource : ExternalMemoryManager
 
 package
 {
+
+    auto getIDsPtr(T)( T[] list... )
+    { return amap!(a=>a.id)(list).ptr; }
+
     auto buildFlags(T)( T[] list... )
     { return reduce!((a,b)=>a|=b)(list); }
 
@@ -174,6 +178,59 @@ package
                infoPropertiesFuncs( list );
     }
 
+    string infoMixin( string subject, string enumname, string spec, in string[] list )
+    {
+        return infoPropertiesData( list ) ~
+               getInfoFunc( subject ) ~ 
+               infoUpdater( enumname, list, spec ) ~
+               infoPropertiesFuncs( list );
+    }
+
+    string immediatelyInfoMixin( string subject, string enumname, in string[] list )
+    {
+        string[] ret;
+
+        foreach( ln; list )
+        {
+            auto tpl = ln.split(":");
+
+            string type_in_cl;
+            string type_in_d;
+            string name;
+
+            if( tpl.length == 2 )
+            {
+                type_in_cl = tpl[0];
+                type_in_d = tpl[0];
+                name = tpl[1];
+            }
+            else
+            {
+                type_in_cl = tpl[0];
+                type_in_d = tpl[1];
+                name = tpl[2];
+            }
+
+            ret ~= format( `@property auto %1$s(){
+                if( id is null ) return %5$s.init;
+                import std.traits;
+                static assert( !isArray!%5$s );
+                size_t len;
+                %2$s buf;
+                checkCall!clGet%3$sInfo( id, %4$s, %2$s.sizeof, &buf, &len );
+                return cast(%5$s)buf;
+            }`,
+                checkName(name),
+                type_in_cl,
+                toCamelCase( subject ),
+                propEnumName( "CL", enumname ~ "_" ~ name ),
+                type_in_d
+            );
+        }
+
+        return ret.join("\n");
+    }
+
     string infoPropertiesData( in string[] list )
     {
         string ret;
@@ -235,14 +292,14 @@ package
         `, toCamelCase( subject ) );
     }
 
-    string infoUpdater( string ef, in string[] list )
+    string infoUpdater( string ef, in string[] list, string spec="" )
     {
         return format(`
-        void updateInfo()
+        void update%sInfo()
         {
 %s
         }
-        `, updaterCode( "CL_" ~ ef.toUpper, list ) );
+        `, spec, updaterCode( "CL_" ~ ef.toUpper, list ) );
     }
 
     string updaterCode( string ef, in string[] list )

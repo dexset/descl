@@ -55,6 +55,7 @@ public:
     static struct CallParams
     {
         CLCommandQueue queue;
+        CLEvent event;
         size_t[] offset, size, loc_size;
 
         void reset() { offset = []; size = []; loc_size = []; }
@@ -66,10 +67,19 @@ public:
     in { assert( queue !is null ); } body
     { params.queue = queue; }
 
-    void setParams( CLCommandQueue queue, size_t[] offset, size_t[] size, size_t[] loc_size=[] )
+    void setMinParams( CLCommandQueue queue, CLEvent event )
     in { assert( queue !is null ); } body
     {
         params.queue = queue;
+        params.event = event;
+    }
+
+    void setParams( CLCommandQueue queue, CLEvent event, size_t[] offset,
+                    size_t[] size, size_t[] loc_size=[] )
+    in { assert( queue !is null ); } body
+    {
+        params.queue = queue;
+        params.event = event;
         params.offset = offset.dup;
         params.size = size.dup;
         params.loc_size = loc_size.dup;
@@ -81,7 +91,7 @@ public:
         params.loc_size = loc_size.dup;
     }
 
-    void exec( CLEvent[] wait_list=[], CLEvent event=null )
+    void exec( CLEvent[] wait_list=[] )
     in
     {
         assert( params.queue !is null );
@@ -100,6 +110,8 @@ public:
         size_t* lws_ptr = params.loc_size.length ? params.loc_size.ptr : null;
         auto gwo = params.offset.length ? params.offset : new size_t[](dim);
 
+        if( params.event ) params.event.reset();
+
         checkCall!clEnqueueNDRangeKernel( params.queue.id,
                 this.id, dim,
                 gwo.ptr,
@@ -107,24 +119,21 @@ public:
                 lws_ptr,
                 cast(uint)wait_list.length,
                 amap!(a=>a.id)(wait_list).ptr,
-                (event is null ? null : &(event.id)) );
+                (params.event is null ? null : &(params.event.id)) );
     }
 
-    void opCall(Args...)( size_t[] sz, size_t[] lsz,
-                          Args args )
+    void opCall(Args...)( size_t[] sz, size_t[] lsz, Args args )
     {
         setArgs( args );
         setSizes( sz, lsz );
         exec();
     }
 
-    void opCall(Args...)( size_t[] sz, size_t[] lsz, 
-                          CLEvent[] wlist, CLEvent ev,
-                          Args args )
+    void opCall(Args...)( size_t[] sz, size_t[] lsz, CLEvent[] wlist, Args args )
     {
         setArgs( args );
         setSizes( sz, lsz );
-        exec( wlist, ev );
+        exec( wlist );
     }
 
     void setArg(Arg)( uint index, Arg arg )

@@ -4,6 +4,7 @@ import des.cl.base;
 import des.cl.device;
 import des.cl.platform;
 import des.cl.context;
+import des.cl.event;
 import des.cl.commandqueue;
 
 import des.cl.glinterop.memory;
@@ -12,36 +13,39 @@ class CLGLContext : CLContext
 {
 protected:
 
-    static struct AcquireElem
-    {
-        CLCommandQueue queue;
-        CLGLMemory mem;
-    }
+    CLGLMemory[] acquired_list;
 
-    AcquireElem[] acquired_list;
+package:
+
+    void registerAcquired( CLGLMemory mem )
+    { acquired_list ~= mem; }
+
+    void unregisterAcquired( CLGLMemory mem )
+    {
+        CLGLMemory[] buf;
+        foreach( elem; acquired_list )
+            if( elem.id != mem.id ) buf ~= elem;
+        acquired_list = buf;
+    }
 
 public:
 
     this( CLPlatform pl, size_t[] devIDs ) { super(pl,devIDs); }
     this( CLPlatform pl, CLDevice.Type type ) { super(pl,type); }
 
-    void registerAcquired( CLCommandQueue queue, CLGLMemory mem )
+    void releaseAllToGL( CLCommandQueue queue, CLEvent[] wait_list=[], CLEvent event=null )
     {
-        acquired_list ~= AcquireElem( queue, mem );
-    }
+        checkCall!clEnqueueReleaseGLObjects( queue.id,
+                cast(uint)acquired_list.length,
+                getIDsPtr(acquired_list),
+                cast(uint)wait_list.length,
+                getIDsPtr(wait_list),
+                event ? &(event.id) : null );
 
-    void releaseAllToGL()
-    {
-        CLCommandQueue[] qs;
-        foreach( elem; acquired_list )
-        {
-            elem.mem.releaseToGL( elem.queue );
-            qs ~= elem.queue;
-        }
-
+        foreach( elem; acquired_list ) elem.ctxReleaseToGL();
         acquired_list.length = 0;
 
-        foreach( q; qs ) q.finish();
+        queue.finish();
     }
 
 protected:

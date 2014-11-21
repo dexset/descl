@@ -17,13 +17,7 @@ public:
 
     this(){}
 
-    CLEvent createUserEvent( CLContext context )
-    {
-        auto ev_id = checkCode!clCreateUserEvent( context.id );
-        return new CLEvent( ev_id );
-    }
-
-    enum CommandType
+    enum Type
     {
         NDRANGE_KERNEL       = CL_COMMAND_NDRANGE_KERNEL,
         TASK                 = CL_COMMAND_TASK,
@@ -44,7 +38,7 @@ public:
         RELEASE_GL_OBJECTS   = CL_COMMAND_RELEASE_GL_OBJECTS
     }
 
-    enum CommandExecutionStatus
+    enum Status
     {
         QUEUED    = CL_QUEUED,
         SUBMITTED = CL_SUBMITTED,
@@ -54,12 +48,31 @@ public:
 
     static private enum info_list =
     [
-        "cl_command_type:CommandType:command_type",
-        "cl_int:CommandExecutionStatus:command_execution_status"
+        "cl_command_type:Type:command_type",
+        "cl_int:Status:command_execution_status"
     ];
 
     mixin( infoMixin( "event", info_list ) );
 
+    static private enum prof_list =
+    [
+        "ulong:queued",
+        "ulong:submit",
+        "ulong:start",
+        "ulong:end"
+    ];
+
+    mixin( immediatelyInfoMixin( "event_profiling", "profiling_command", prof_list ) );
+
+    @property bool isValid() const { return id != null; }
+    void reset() { if( isValid ) checkCall!clRetainEvent(id); }
+
 protected:
-    override void selfDestroy() { checkCall!clRetainEvent(id); }
+    override void selfDestroy() { reset(); }
+}
+
+class CLUserEvent : CLEvent
+{
+    this( CLContext context ) { id = checkCode!clCreateUserEvent( context.id ); }
+    void setStatus( Status stat ) { checkCall!clSetUserEventStatus( id, stat ); }
 }

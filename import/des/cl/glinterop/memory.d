@@ -101,17 +101,20 @@ public:
                 cast(uint)wait_list.length,
                 amap!(a=>a.id)(wait_list).ptr,
                 event ? &(event.id) : null );
-        (cast(CLGLContext)context).registerAcquired( queue, this );
         acquired = true;
+        (cast(CLGLContext)context).registerAcquired( this );
     }
 
     void releaseToGL( CLCommandQueue queue, CLEvent[] wait_list=[], CLEvent event=null )
     {
         if( !acquired ) return;
-        checkCall!clEnqueueReleaseGLObjects( queue.id, 1u, &id, 
+        checkCall!clEnqueueReleaseGLObjects( queue.id, 1u, &id,
                 cast(uint)wait_list.length,
                 amap!(a=>a.id)(wait_list).ptr,
                 event ? &(event.id) : null );
         acquired = false;
+        (cast(CLGLContext)context).unregisterAcquired( this );
     }
+
+    package void ctxReleaseToGL() { acquired = false; }
 }

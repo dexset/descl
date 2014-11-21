@@ -31,6 +31,8 @@ class CLCommandQueue : CLResource
     void flush() { checkCall!clFlush(id); }
     void finish() { checkCall!clFinish(id); }
 
+    void barrier() { checkCall!clEnqueueBarrier(id); }
+
     static private enum info_list =
     [
         "size_t:properties"
