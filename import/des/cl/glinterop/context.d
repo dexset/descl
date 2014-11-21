@@ -9,7 +9,8 @@ class CLGLContext : CLContext
 {
 public:
 
-    this( CLPlatform pl ) { super(pl); }
+    this( CLPlatform pl, size_t[] devIDs ) { super(pl,devIDs); }
+    this( CLPlatform pl, CLDevice.Type type ) { super(pl,type); }
 
 protected:
     override cl_context_properties[] getProperties()

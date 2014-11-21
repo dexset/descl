@@ -3,7 +3,7 @@ module des.cl.device;
 import des.cl.base;
 import des.cl.platform;
 
-class CLDevice : CLReference
+class CLDevice : CLResource
 {
 protected:
     CLPlatform platform;
@@ -21,13 +21,21 @@ protected:
 public:
     cl_device_id id;
 
+    enum Type
+    {
+        CPU         = CL_DEVICE_TYPE_CPU,
+        GPU         = CL_DEVICE_TYPE_GPU,
+        ACCELERATOR = CL_DEVICE_TYPE_ACCELERATOR,
+        DEFAULT     = CL_DEVICE_TYPE_DEFAULT
+    }
+
     static CLDevice[] getAll( CLPlatform platform, Type type=Type.DEFAULT )
     {
         cl_uint nums;
 
-        checkCall!(clGetDeviceIDs)( platform.id, type, 0, null, &nums );
+        checkCall!clGetDeviceIDs( platform.id, type, 0, null, &nums );
         auto ids = new cl_device_id[](nums);
-        checkCall!(clGetDeviceIDs)( platform.id, type, nums, ids.ptr, &nums );
+        checkCall!clGetDeviceIDs( platform.id, type, nums, ids.ptr, null );
         CLDevice[] buf;
         foreach( id; ids )
             buf ~= new CLDevice( id, platform, false );
@@ -61,20 +69,6 @@ public:
     {
         LOCAL  = CL_LOCAL,
         GLOBAL = CL_GLOBAL
-    }
-
-    enum CommandQueueProperies
-    {
-        OUT_OF_ORDER_EXEC_MODE_ENABLE = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
-        PROFILING_ENABLE              = CL_QUEUE_PROFILING_ENABLE
-    }
-
-    enum Type
-    {
-        CPU         = CL_DEVICE_TYPE_CPU,
-        GPU         = CL_DEVICE_TYPE_GPU,
-        ACCELERATOR = CL_DEVICE_TYPE_ACCELERATOR,
-        DEFAULT     = CL_DEVICE_TYPE_DEFAULT
     }
 
     /+
@@ -136,7 +130,7 @@ public:
         "string:vendor",
         "uint:vendor_id",
         "string:version",
-        //"string:!cl_driver_version" TODO: param_name without convertion
+        "string:!driver_version"
     ];
 
     mixin( infoProperties( "device", prop_list ) );
@@ -146,7 +140,7 @@ protected:
     override void selfDestroy()
     {
         if( is_sub_device )
-            checkCall!(clReleaseDevice)( id );
+            checkCall!clReleaseDevice( id );
     }
 
 }

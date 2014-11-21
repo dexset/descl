@@ -3,7 +3,7 @@ module des.cl.event;
 import des.cl.base;
 import des.cl.context;
 
-class CLEvent : CLReference
+class CLEvent : CLResource
 {
 package:
     this( cl_event ev_id ) { id = ev_id; }
@@ -11,11 +11,11 @@ package:
 public:
     cl_event id;
 
+    this(){}
+
     CLEvent createUserEvent( CLContext context )
     {
-        int retcode;
-        auto ev_id = clCreateUserEvent( context.id, &retcode );
-        checkError( retcode, "clCreateUserEvent" );
+        auto ev_id = checkCode!clCreateUserEvent( context.id );
         return new CLEvent( ev_id );
     }
 
@@ -57,5 +57,5 @@ public:
     mixin( infoProperties( "event", prop_list ) );
 
 protected:
-    override void selfDestroy() { checkCall!(clReleaseEvent)(id); }
+    override void selfDestroy() { checkCall!clReleaseEvent(id); }
 }

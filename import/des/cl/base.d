@@ -9,9 +9,13 @@ package
     import std.range;
     import std.algorithm;
     import std.array;
+
+    import des.util.emm;
+    import des.util.algo;
+    import des.util.logger;
 }
 
-public import des.util.emm;
+import des.util.string;
 
 static this()
 {
@@ -25,7 +29,7 @@ class CLException : Exception
     { super( msg, file, line ); }
 }
 
-class CLReference : ExternalMemoryManager
+class CLResource : ExternalMemoryManager
 {
     mixin DirectEMM;
     protected abstract void selfDestroy();
@@ -33,7 +37,8 @@ class CLReference : ExternalMemoryManager
 
 package
 {
-    template amap(fun...) { auto amap(Range)(Range r) { return array(map!(fun)(r)); } }
+    auto buildFlags(T)( T[] list... )
+    { return reduce!((a,b)=>a|=b)(list); }
 
     void checkError( int code, string fnc_call, string file=__FILE__, size_t line=__LINE__ )
     {
@@ -119,9 +124,30 @@ package
 
     void checkCall(alias fnc, string file=__FILE__, size_t line=__LINE__, Args...)( Args args )
     {
-        auto fnc_call = (&fnc).stringof[2..$];
-        fnc_call ~= format( "(%( %(%c%),%) )", argsToString( args ) );
-        checkError( fnc(args), fnc_call, file, line );
+        auto fnc_call = (&fnc).stringof[2..$] ~ format( "(%( %(%c%),%) )", argsToString( args ) );
+        checkError( fnc( args ), fnc_call, file, line );
+    }
+
+    auto checkCode(alias fnc, string file=__FILE__, size_t line=__LINE__, Args...)( Args args )
+    out(v)
+    {
+        assert( v !is null );
+    }
+    body
+    {
+        auto fnc_call = (&fnc).stringof[2..$] ~ format( "(%( %(%c%),%) )", argsToString( args ) );
+        int retcode;
+        debug
+        {
+            auto id = fnc( args, &retcode );
+            checkError( retcode, fnc_call, file, line );
+            return id;
+        }
+        else
+        {
+            scope(exit) checkError( retcode, fnc_call, file, line );
+            return fnc( args, &retcode );
+        }
     }
 
     string[] argsToString(Args...)( Args args )
@@ -136,7 +162,15 @@ package
     {
         return infoPropertiesData( list ) ~
                getInfoFunc( subject ) ~ 
-               infoUpdater( "CL_" ~ subject.toUpper, list ) ~
+               infoUpdater( subject, list ) ~
+               infoPropertiesFuncs( list );
+    }
+
+    string infoProperties( string subject, string enumname, in string[] list )
+    {
+        return infoPropertiesData( list ) ~
+               getInfoFunc( subject ) ~ 
+               infoUpdater( enumname, list ) ~
                infoPropertiesFuncs( list );
     }
 
@@ -183,7 +217,7 @@ package
 
                 auto buf = new type[]( max_length );
                 size_t len;
-                checkCall!(clGet%1$sInfo)( id, param_name, buf.length, buf.ptr, &len );
+                checkCall!clGet%1$sInfo( id, param_name, buf.length, buf.ptr, &len );
 
                 static if( is( type == etype ) )
                     return array( map!(a=>cast(ret_type)(a))( buf[0 .. len]) ).dup;
@@ -194,41 +228,24 @@ package
             {
                 T buf;
                 size_t len;
-                checkCall!(clGet%1$sInfo)( id, param_name, buf.sizeof, &buf, &len );
+                checkCall!clGet%1$sInfo( id, param_name, buf.sizeof, &buf, &len );
                 return cast(R)(buf);
             }
         }
         `, toCamelCase( subject ) );
     }
 
-    string toCamelCase( string str, string splitter="_", bool upperFirst=true )
-    {
-        if( upperFirst )
-            return ( array(map!(a=>a.capitalize)( str.split(splitter) ) ) ).join("");
-        else
-        {
-            auto words = str.split( splitter );
-            return words[0].toLower ~ (amap!(a=>a.capitalize)( words[1..$] ).join("")); 
-        }
-    }
-
-    unittest
-    {
-        assert( toCamelCase( "program_build" ) == "ProgramBuild" );
-        assert( toCamelCase( "single-precision-constant", "-", false ) == "singlePrecisionConstant" );
-    }
-
-    string infoUpdater( string prefix, in string[] list )
+    string infoUpdater( string ef, in string[] list )
     {
         return format(`
         void updateProperties()
         {
 %s
         }
-        `, updaterCode( prefix, list ) );
+        `, updaterCode( "CL_" ~ ef.toUpper, list ) );
     }
 
-    string updaterCode( string prefix, in string[] list )
+    string updaterCode( string ef, in string[] list )
     {
         string ret = "import std.stdio;\n";
 
@@ -253,13 +270,9 @@ package
                 name = tpl[2];
             }
 
-            debug(getinfocallparamname)
-            {
-            ret ~= format( `stderr.writeln( "getInfo: ", (%s).stringof, " ", %s );
-                    `, propEnumName(prefix,name), propEnumName(prefix,name) );
-            }
             ret ~= format( "%s = getInfo!(%s,%s)(%s);\n",
-                    fmtPropDataName(name), type_in_cl, type_in_d, propEnumName(prefix,name) );
+                    fmtPropDataName(name), type_in_cl,
+                    type_in_d, propEnumName(ef,name) );
         }
 
         return ret;
@@ -299,13 +312,16 @@ package
 
     string checkName( string name )
     {
-        if( name == "version" || name == "debug" ) 
-            return "_" ~ name;
+        if( name == "version" || name == "debug" ) return "_" ~ name;
+        if( name[0] == '!' ) return name[1..$];
         return name;
     }
 
     string propEnumName( string prefix, string name )
-    { return format( "%s_%s", prefix, name.toUpper ); }
+    {
+        if( name.startsWith("!") ) return "CL_" ~ name[1..$].toUpper;
+        return format( "%s_%s", prefix, name.toUpper );
+    }
 
     unittest
     {
@@ -313,5 +329,6 @@ package
         assert( propEnumName( "CL_PLATFORM", "nAmE" ) == "CL_PLATFORM_NAME" );
         assert( propEnumName( "CL_DEVICE", "max_work_item_dimensions" ) 
                 == "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS" );
+        assert( propEnumName( "CL_DEVICE", "!cl_driver_version" ) == "CL_DRIVER_VERSION" );
     }
 }

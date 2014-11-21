@@ -3,37 +3,61 @@ module des.cl.program;
 import des.cl.base;
 import des.cl.device;
 import des.cl.context;
+import des.cl.kernel;
 
-class CLProgram : CLReference
+import des.util.string;
+
+class CLProgram : CLResource
 {
 protected:
-    this( cl_program p_id ) { this.id = p_id; }
+    this( cl_program p_id, string source )
+    {
+        this.id = p_id;
+        this.source = source;
+    }
 
     CLDevice[] last_build_devices;
+    string source;
 
 public:
     cl_program id;
 
+    CLKernel[string] kernel;
+
     static CLProgram createWithSource( CLContext context, string source )
     {
-        int retcode;
         char[] str = source.dup;
         char* buf = str.ptr;
-        auto id = clCreateProgramWithSource( context.id, 1, 
-                     &buf, [source.length].ptr, &retcode );
-        checkError( retcode, "clCreateProgramWithSource" );
+        auto id = checkCode!clCreateProgramWithSource( context.id, 1,
+                     &buf, [source.length].ptr );
 
-        return new CLProgram(id);
+        return new CLProgram( id, source );
     }
 
-    void build( CLDevice[] devices, CLBuildOption[] options=[] )
+    BuildInfo[] build( CLDevice[] devices, CLBuildOption[] options=[] )
     {
         last_build_devices = devices.dup;
-        checkCall!(clBuildProgram)( id,
+        int retcode = clBuildProgram( id,
                 cast(uint)devices.length,
                 amap!(a=>a.id)(devices).ptr,
                 getOptionsStringz( options ),
                 null, null /+ callback and userdata for callback +/ );
+
+        if( retcode != CL_SUCCESS )
+        {
+            log_error( "\n%s", buildInfo() );
+
+            throw new CLException( format( "'%s' return error code %d",
+                        "clBuildProgram", retcode) );
+        }
+
+        auto kernel_names = parseKernelNames( source );
+        kernel.destroy();
+        foreach( kn; kernel_names )
+            kernel[kn] = newEMM!CLKernel( this, kn );
+        log_info( "finded kernels: %(%s, %)", kernel.keys );
+
+        return buildInfo();
     }
 
     enum BuildStatus
@@ -58,37 +82,57 @@ public:
         BuildInfo[] ret;
         foreach( dev; last_build_devices )
             ret ~= BuildInfo( dev,
-                    buildStatusForDevice(dev), 
-                    buildLogForDevice( dev ) );
+                    buildStatus(dev), 
+                    buildLog( dev ) );
         return ret;
     }
 
 protected:
 
-    override void selfDestroy() { checkCall!(clReleaseProgram)(id); }
+    /++ cl kernel declaration must starts with keyword
+        "kernel" or "__kernel__" and must have
+        name of kernel at same line +/
+    string[] parseKernelNames( string src )
+    {
+        string[] kn;
+        foreach( ln; src.splitLines )
+        {
+            auto cln = ln.strip;
+            if( cln.startsWith("kernel") || cln.startsWith("__kernel__") )
+            {
+                auto kname = cln.split[2];
+                kn ~= kname.endsWith("(") ? kname[0..$-1] : kname;
+            }
+        }
+        return kn;
+    }
+
+    override void selfDestroy() { checkCall!clReleaseProgram(id); }
 
     auto getOptionsStringz( CLBuildOption[] options )
     {
         if( options.length == 0 ) return null;
-        return amap!(a=>a.toString)(options).join(" ").toStringz;
+        auto opt_str = amap!(a=>a.toString)(options).join(" ");
+        log_info( opt_str );
+        return opt_str.toStringz;
     }
 
-    BuildStatus buildStatusForDevice( CLDevice device )
+    BuildStatus buildStatus( CLDevice device )
     {
         cl_build_status val;
         size_t len;
-        checkCall!(clGetProgramBuildInfo)( id, device.id, 
+        checkCall!clGetProgramBuildInfo( id, device.id, 
                 CL_PROGRAM_BUILD_STATUS, cl_build_status.sizeof, &val, &len );
         return cast(BuildStatus)val;
     }
 
-    string buildLogForDevice( CLDevice device )
+    string buildLog( CLDevice device )
     {
         size_t len;
-        checkCall!(clGetProgramBuildInfo)( id, device.id, 
+        checkCall!clGetProgramBuildInfo( id, device.id, 
                 CL_PROGRAM_BUILD_LOG, 0, null, &len );
         auto val = new char[](len);
-        checkCall!(clGetProgramBuildInfo)( id, device.id, 
+        checkCall!clGetProgramBuildInfo( id, device.id, 
                 CL_PROGRAM_BUILD_LOG, val.length, val.ptr, &len );
         return val.idup;
     }
@@ -109,10 +153,10 @@ interface CLBuildOption
             };
         }
 
-        CLBuildOption directory( string dir )
+        CLBuildOption dir( string d )
         {
             return new class CLBuildOption
-            { override string toString() { return format( "-l %s", dir ); } };
+            { override string toString() { return format( "-I %s", d ); } };
         }
 
         @property CLBuildOption inhibitAllWarningMessages()
@@ -152,7 +196,7 @@ interface CLBuildOption
             {
                 return new class CLBuildOption
                 { override string toString() { return "-cl-%s"; } };
-            }`, toCamelCase(opt,"-",false), opt );
+            }`, toCamelCaseBySep(opt,"-",false), opt );
             }
         }
 

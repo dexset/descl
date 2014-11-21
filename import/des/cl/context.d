@@ -3,49 +3,100 @@ module des.cl.context;
 import des.cl.base;
 import des.cl.device;
 import des.cl.platform;
+import des.cl.program;
+import des.cl.commandqueue;
 
-class CLContext : CLReference
+import des.util.string;
+
+extern(C) void pfn_notify( const char* errinfo, const void* private_info, size_t cb, void* user_data )
 {
-protected CLPlatform platform;
+    auto nb = (cast(shared CLContext.NotifyBuffer)user_data);
+    nb.push( CLContext.Notify( toDString( errinfo ),
+                (cast(ubyte*)private_info)[0..cb].idup ) );
+}
 
-private bool inited = false;
+class CLContext : CLResource
+{
+    static synchronized class NotifyBuffer
+    {
+        Notify[] list;
+
+        void push( Notify n ) { list ~= n; }
+
+        Notify[] clearGet()
+        {
+            Notify[] ret;
+            foreach( n; list )
+                ret ~= n;
+            list.length = 0;
+            return ret;
+        }
+    }
+
+    shared NotifyBuffer notify_buffer;
+
+    CLPlatform platform;
 
 public:
+
+    CLDevice[] devices;
+
+    static struct Notify
+    {
+        string errinfo;
+        immutable(void)[] bininfo;
+    }
+
     cl_context id;
 
-    this( CLPlatform pl ) { this.platform = pl; }
-
-    final void initializeFromType( CLDevice.Type type=CLDevice.Type.GPU )
+    this( CLPlatform pl, size_t[] devIDs )
     {
+        platform = pl;
         auto prop = getProperties();
+        
+        notify_buffer = new shared NotifyBuffer;
 
-        int retcode;
-        auto ctx_id = clCreateContextFromType( prop.ptr, type,
-                                               null, // pointer to callback function
-                                               null, // user data
-                                               &retcode );
+        foreach( devID; devIDs )
+            devices ~= platform.devices[devID];
 
-        checkError( retcode, "clCreateContextFromType" );
-        id = ctx_id;
-        inited = true;
-    }
-
-    final void initializeFromDevices( CLDevice[] devices... )
-    {
-        auto prop = getProperties();
-
-        int retcode;
-        auto ctx_id = clCreateContext( prop.ptr,
+        id = checkCode!clCreateContext( prop.ptr,
                                        cast(uint)devices.length,
                                        amap!(a=>a.id)(devices).ptr,
-                                       null, // pointer to callback function
-                                       null, // user data
-                                       &retcode );
+                                       &pfn_notify,
+                                       cast(void*)notify_buffer );
 
-        checkError( retcode, "clCreateContext" );
-        id = ctx_id;
-        inited = true;
+        updateProperties();
     }
+
+    this( CLPlatform pl, CLDevice.Type type )
+    {
+        platform = pl;
+        auto prop = getProperties();
+        
+        notify_buffer = new shared NotifyBuffer;
+
+        foreach( dev; platform.devices )
+            if( type == dev.type ) devices ~= dev;
+
+        id = checkCode!clCreateContextFromType( prop.ptr, type,
+                                       &pfn_notify,
+                                       cast(void*)notify_buffer );
+
+        updateProperties();
+    }
+
+    Notify[] pullNotifies() { return notify_buffer.clearGet(); }
+
+    CLProgram buildProgram( string src, CLBuildOption[] opt=[] )
+    {
+         auto prog = registerChildEMM( CLProgram.createWithSource( this, src ) );
+         prog.build( devices, opt );
+         return prog;
+    }
+
+    CLCommandQueue createQueue( CLCommandQueue.Properties[] prop, size_t devNo=0 )
+    in{ assert( devNo < devices.length ); } body
+    { return newEMM!CLCommandQueue( this, devNo, prop ); }
 
     /+
         TODO: fill
@@ -59,15 +110,9 @@ public:
 
     mixin( infoProperties( "context", prop_list ) );
 
-    bool isInited() const { return inited; }
-
 protected:
 
-    override void selfDestroy()
-    {
-        checkCall!(clReleaseContext)(id);
-        inited = false;
-    }
+    override void selfDestroy() { checkCall!clReleaseContext(id); }
 
     cl_context_properties[] getProperties()
     {

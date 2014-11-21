@@ -9,16 +9,37 @@ import des.cl.memory;
 import des.cl.commandqueue;
 import des.cl.program;
 
-class CLKernel : CLReference
+import des.math.linear;
+
+interface CLMemoryHandler
+{
+    protected @property CLMemory clmem();
+    protected @property void clmem( CLMemory );
+
+    void setAsArgCallback( CLKernel );
+
+    static @property string getCLMemProperty()
+    {
+        return `
+        protected
+        {
+            CLMemory clmemory;
+            @property CLMemory clmem() { return clmemory; }
+            @property void clmem( CLMemory m )
+            in{ assert( m !is null ); } body
+            { clmemory = m; }
+        }`;
+    }
+}
+
+class CLKernel : CLResource
 {
 public:
     cl_kernel id;
 
     this( CLProgram program, string name )
     {
-        int retcode;
-        id = clCreateKernel( program.id, name.toStringz, &retcode );
-        checkError( retcode, "clCreateKernel" );
+        id = checkCode!clCreateKernel( program.id, name.toStringz );
     }
 
     void setArgs(Args...)( Args args )
@@ -27,25 +48,79 @@ public:
             setArg( i, arg );
     }
 
-    void exec( CLCommandQueue command_queue, uint dim, size_t[] global_work_offset,
-            size_t[] global_work_size, size_t[] local_work_size,
-            CLEvent[] wait_list=[], CLEvent event=null )
+    static struct CallParams
+    {
+        CLCommandQueue queue;
+        size_t[] offset, size, loc_size;
+
+        void reset() { offset = []; size = []; loc_size = []; }
+    }
+
+    CallParams params;
+
+    void setQueue( CLCommandQueue queue )
+    in { assert( queue !is null ); } body
+    { params.queue = queue; }
+
+    void setParams( CLCommandQueue queue, size_t[] offset, size_t[] size, size_t[] loc_size=[] )
+    in { assert( queue !is null ); } body
+    {
+        params.queue = queue;
+        params.offset = offset.dup;
+        params.size = size.dup;
+        params.loc_size = loc_size.dup;
+    }
+
+    void setSizes( size_t[] size, size_t[] loc_size=[] )
+    {
+        params.size = size.dup;
+        params.loc_size = loc_size.dup;
+    }
+
+    void exec( CLEvent[] wait_list=[], CLEvent event=null )
     in
     {
-        assert( global_work_offset.length == dim );
-        assert( global_work_size.length == dim );
-        assert( local_work_size.length == dim );
+        assert( params.queue !is null );
+
+        auto dm = params.size.length;
+
+        assert( dm >= 1 && dm <= 3 );
+        assert( params.offset.length == dm ||
+                params.offset.length == 0 );
+        assert( params.loc_size.length == dm ||
+                params.loc_size.length == 0 );
     }
     body
     {
-        checkCall!(clEnqueueNDRangeKernel)( command_queue.id,
+        uint dim = cast(uint)params.size.length;
+        size_t* lws_ptr = params.loc_size.length ? params.loc_size.ptr : null;
+        auto gwo = params.offset.length ? params.offset : new size_t[](dim);
+
+        checkCall!clEnqueueNDRangeKernel( params.queue.id,
                 this.id, dim,
-                global_work_offset.ptr,
-                global_work_size.ptr,
-                local_work_size.ptr,
-                cast(cl_uint)wait_list.length, 
+                gwo.ptr,
+                params.size.ptr,
+                lws_ptr,
+                cast(cl_uint)wait_list.length,
                 amap!(a=>a.id)(wait_list).ptr,
                 (event is null ? null : &(event.id)) );
+    }
+
+    void opCall(Args...)( size_t[] sz, size_t[] lsz,
+                          Args args )
+    {
+        setArgs( args );
+        setSizes( sz, lsz );
+        exec();
+    }
+
+    void opCall(Args...)( size_t[] sz, size_t[] lsz, 
+                          CLEvent[] wlist, CLEvent ev,
+                          Args args )
+    {
+        setArgs( args );
+        setSizes( sz, lsz );
+        exec( wlist, ev );
     }
 
     void setArg(Arg)( uint index, Arg arg )
@@ -59,6 +134,19 @@ public:
             value = &aid;
             size = aid.sizeof;
         }
+        else static if( is( Arg : CLMemoryHandler ) )
+        {
+            auto cmh = cast(CLMemoryHandler)arg;
+            cmh.setAsArgCallback( this );
+            auto aid = cmh.clmem.id;
+            value = &aid;
+            size = aid.sizeof;
+        }
+        else static if( isStaticVector!Arg || isStaticMatrix!Arg )
+        {
+            value = arg.data.ptr;
+            size = arg.data.sizeof;
+        }
         else static if( !hasIndirections!Arg )
         {
             value = &arg;
@@ -70,17 +158,15 @@ public:
             static assert(0);
         }
 
-        checkCall!(clSetKernelArg)( id, index, size, value );
+        checkCall!clSetKernelArg( id, index, size, value );
+
         debug(printkernelargs)
-        {
-            import std.stdio;
-            stderr.writefln( "set '%s' arg #%d: %s %s", 
+            log_info( "set '%s' arg #%d: %s %s",
                     Arg.stringof, index, size, value );
-        }
     }
 
 protected:
 
-    override void selfDestroy() { checkCall!(clReleaseKernel)(id); }
+    override void selfDestroy() { checkCall!clReleaseKernel(id); }
 
 }

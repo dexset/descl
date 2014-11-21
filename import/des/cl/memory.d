@@ -7,7 +7,7 @@ import des.cl.context;
 import des.cl.event;
 import des.cl.commandqueue;
 
-class CLMemory : CLReference
+class CLMemory : CLResource
 {
 protected:
     this( cl_mem mem_id, Type type, Flag[] flags )
@@ -51,9 +51,7 @@ public:
 
     static CLMemory createBuffer( CLContext context, Flag[] flags, size_t size, void* host_ptr=null )
     {
-        int retcode;
-        auto id = clCreateBuffer( context.id, compileFlags(flags), size, host_ptr, &retcode );
-        checkError( retcode, "clCreateBuffer" );
+        auto id = checkCode!clCreateBuffer( context.id, compileFlags(flags), size, host_ptr );
 
         return new CLMemory( id, Type.BUFFER, flags );
     }
@@ -63,7 +61,7 @@ public:
     {
         assert( type == Type.BUFFER ); // TODO: images
 
-        checkCall!(clEnqueueReadBuffer)( command_queue.id, id,
+        checkCall!clEnqueueReadBuffer( command_queue.id, id,
                blocking, offset, 
                buffer.length, buffer.ptr, 
                cast(cl_uint)wait_list.length, 
@@ -84,7 +82,7 @@ public:
     {
         assert( type == Type.BUFFER ); // TODO: images
 
-        checkCall!(clEnqueueWriteBuffer)( command_queue.id, id,
+        checkCall!clEnqueueWriteBuffer( command_queue.id, id,
                 blocking, offset,
                 buffer.length, buffer.ptr,
                 cast(cl_uint)wait_list.length,
@@ -95,5 +93,5 @@ public:
     // TODO: map
 
 protected:
-    override void selfDestroy() { checkCall!(clReleaseMemObject)(id); }
+    override void selfDestroy() { checkCall!clReleaseMemObject(id); }
 }

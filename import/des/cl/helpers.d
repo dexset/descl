@@ -58,7 +58,8 @@ string getCLDeviceFullInfoString( CLDevice dev, string fmt="", string sep="\n" )
     ret ~= format( fmt, "preferred_vector_width_float", dev.preferred_vector_width_float );
     ret ~= format( fmt, "preferred_vector_width_double", dev.preferred_vector_width_double );
     ret ~= format( fmt, "profiling_timer_resolution", dev.profiling_timer_resolution );
-    ret ~= format( fmt, "queue_properties",          getMaskString!(CLDevice.CommandQueueProperies)(dev.queue_properties) );
+    ret ~= format( fmt, "queue_properties",          getMaskString!(CLCommandQueue.Properties)(dev.queue_properties) );
+    ret ~= format( fmt, "driver_version",            dev.driver_version );
 
     return ret.join(sep);
 }
