@@ -15,7 +15,7 @@ protected:
         this.id = id;
         this.platform = platform;
         this.is_sub_device = sub_dev;
-        updateProperties();
+        updateInfo();
     }
 
 public:
@@ -75,7 +75,7 @@ public:
         type:param_name,
         cl_type:dlang_type:param_name
     +/
-    static private enum prop_list = 
+    static private enum info_list =
     [
         "uint:address_bits",
         "uint:bool:available",
@@ -133,14 +133,13 @@ public:
         "string:!driver_version"
     ];
 
-    mixin( infoProperties( "device", prop_list ) );
+    mixin( infoMixin( "device", info_list ) );
 
 protected:
 
     override void selfDestroy()
     {
         if( is_sub_device )
-            checkCall!clReleaseDevice( id );
+            checkCall!clRetainDevice( id );
     }
-
 }

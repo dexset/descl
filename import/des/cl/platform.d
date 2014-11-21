@@ -14,7 +14,7 @@ private:
     this( cl_platform_id pl_id )
     {
         this.id = pl_id;
-        updateProperties();
+        updateInfo();
 
         devices = registerChildEMM( CLDevice.getAll(this) );
     }
@@ -41,7 +41,7 @@ public:
         type:param_name,
         cl_type:dlang_type:param_name
     +/
-    static private enum prop_list =
+    static private enum info_list =
     [
         "string:name",
         "string:vendor",
@@ -50,5 +50,5 @@ public:
         "string:extensions"
     ];
 
-    mixin( infoProperties( "platform", prop_list ) );
+    mixin( infoMixin( "platform", info_list ) );
 }

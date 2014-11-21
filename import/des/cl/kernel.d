@@ -16,7 +16,7 @@ interface CLMemoryHandler
     protected @property CLMemory clmem();
     protected @property void clmem( CLMemory );
 
-    void setAsArgCallback( CLKernel );
+    void setAsKernelArgCallback( CLCommandQueue );
 
     static @property string getCLMemProperty()
     {
@@ -37,10 +37,14 @@ class CLKernel : CLResource
 public:
     cl_kernel id;
 
-    this( CLProgram program, string name )
+    this( CLProgram program, string nm )
     {
-        id = checkCode!clCreateKernel( program.id, name.toStringz );
+        k_name = nm;
+        id = checkCode!clCreateKernel( program.id, nm.toStringz );
     }
+
+    private string k_name;
+    @property string name() const { return k_name; }
 
     void setArgs(Args...)( Args args )
     {
@@ -101,7 +105,7 @@ public:
                 gwo.ptr,
                 params.size.ptr,
                 lws_ptr,
-                cast(cl_uint)wait_list.length,
+                cast(uint)wait_list.length,
                 amap!(a=>a.id)(wait_list).ptr,
                 (event is null ? null : &(event.id)) );
     }
@@ -137,7 +141,7 @@ public:
         else static if( is( Arg : CLMemoryHandler ) )
         {
             auto cmh = cast(CLMemoryHandler)arg;
-            cmh.setAsArgCallback( this );
+            cmh.setAsKernelArgCallback( params.queue );
             auto aid = cmh.clmem.id;
             value = &aid;
             size = aid.sizeof;
@@ -167,6 +171,7 @@ public:
 
 protected:
 
-    override void selfDestroy() { checkCall!clReleaseKernel(id); }
+    override void selfDestroy()
+    { checkCall!clRetainKernel(id); }
 
 }

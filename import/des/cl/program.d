@@ -107,7 +107,7 @@ protected:
         return kn;
     }
 
-    override void selfDestroy() { checkCall!clReleaseProgram(id); }
+    override void selfDestroy() { checkCall!clRetainProgram(id); }
 
     auto getOptionsStringz( CLBuildOption[] options )
     {

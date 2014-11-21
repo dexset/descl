@@ -158,7 +158,7 @@ package
             return [ format( "%s", args[0] ) ];
     }
 
-    string infoProperties( string subject, in string[] list )
+    string infoMixin( string subject, in string[] list )
     {
         return infoPropertiesData( list ) ~
                getInfoFunc( subject ) ~ 
@@ -166,7 +166,7 @@ package
                infoPropertiesFuncs( list );
     }
 
-    string infoProperties( string subject, string enumname, in string[] list )
+    string infoMixin( string subject, string enumname, in string[] list )
     {
         return infoPropertiesData( list ) ~
                getInfoFunc( subject ) ~ 
@@ -238,7 +238,7 @@ package
     string infoUpdater( string ef, in string[] list )
     {
         return format(`
-        void updateProperties()
+        void updateInfo()
         {
 %s
         }

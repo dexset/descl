@@ -35,10 +35,9 @@ class CLContext : CLResource
 
     shared NotifyBuffer notify_buffer;
 
-    CLPlatform platform;
-
 public:
 
+    CLPlatform platform;
     CLDevice[] devices;
 
     static struct Notify
@@ -64,8 +63,6 @@ public:
                                        amap!(a=>a.id)(devices).ptr,
                                        &pfn_notify,
                                        cast(void*)notify_buffer );
-
-        updateProperties();
     }
 
     this( CLPlatform pl, CLDevice.Type type )
@@ -81,8 +78,6 @@ public:
         id = checkCode!clCreateContextFromType( prop.ptr, type,
                                        &pfn_notify,
                                        cast(void*)notify_buffer );
-
-        updateProperties();
     }
 
     Notify[] pullNotifies() { return notify_buffer.clearGet(); }
@@ -98,21 +93,9 @@ public:
     in{ assert( devNo < devices.length ); } body
     { return newEMM!CLCommandQueue( this, devNo, prop ); }
 
-    /+
-        TODO: fill
-        type:param_name,
-        cl_type:dlang_type:param_name
-    +/
-    static private enum prop_list = 
-    [
-        "uint:reference_count"
-    ];
-
-    mixin( infoProperties( "context", prop_list ) );
-
 protected:
 
-    override void selfDestroy() { checkCall!clReleaseContext(id); }
+    override void selfDestroy() { checkCall!clRetainContext(id); }
 
     cl_context_properties[] getProperties()
     {

@@ -1,17 +1,20 @@
 module des.cl.glinterop.memory;
 
 import des.gl.base;
+
 import des.cl.base;
 import des.cl.memory;
 import des.cl.commandqueue;
+import des.cl.context;
+import des.cl.event;
 
 import des.cl.glinterop.context;
 
 class CLGLMemory : CLMemory
 {
 protected:
-    this( cl_mem id, Type type, Flag[] flags )
-    { super( id, type, flags ); }
+    this( CLContext ctx, cl_mem id, Type type, Flag[] flags )
+    { super( ctx, id, type, flags ); }
 
     static bool validCLGLMemoryFlag( Flag flag )
     {
@@ -41,8 +44,8 @@ public:
     }
     body
     {
-        auto id = checkCode!clCreateFromGLBuffer( context.id, compileFlags(flags), buffer.id );
-        return new CLGLMemory( id, Type.BUFFER, flags );
+        auto id = checkCode!clCreateFromGLBuffer( context.id, buildFlags(flags), buffer.id );
+        return new CLGLMemory( context, id, Type.BUFFER, flags );
     }
 
     static auto createFromGLTexture( CLGLContext context, GLTexture texture, Flag[] flags=[Flag.READ_WRITE] )
@@ -56,7 +59,7 @@ public:
     {
         CLMemory.Type tp;
         cl_mem id;
-        ulong cflags = compileFlags(flags);
+        ulong cflags = buildFlags(flags);
         if( texture.target == texture.Target.T2D )
         {
             id = checkCode!clCreateFromGLTexture2D( context.id, cflags, cast(GLenum)texture.target,
@@ -70,10 +73,11 @@ public:
             tp = Type.IMAGE3D;
         }
         else throw new CLException( format( "unsupported gl texture type %s", texture.target) );
-        return new CLGLMemory( id, tp, flags );
+        return new CLGLMemory( context, id, tp, flags );
     }
 
-    static auto createFromGLRenderBuffer( CLGLContext context, GLRenderBuffer buffer, Flag[] flags=[Flag.READ_WRITE] )
+    static auto createFromGLRenderBuffer( CLGLContext context,
+            GLRenderBuffer buffer, Flag[] flags=[Flag.READ_WRITE] )
     in{
         assert( context !is null );
         assert( buffer !is null );
@@ -82,24 +86,32 @@ public:
     }
     body
     {
-        auto id = checkCode!clCreateFromGLRenderbuffer( context.id, compileFlags(flags), buffer.id );
+        auto id = checkCode!clCreateFromGLRenderbuffer( context.id, buildFlags(flags), buffer.id );
 
-        return new CLGLMemory( id, Type.IMAGE2D, flags );
+        return new CLGLMemory( context, id, Type.IMAGE2D, flags );
     }
 
-    void acquireFromGL( CLCommandQueue command_queue )
+    @property bool isAcquired() const { return acquired; }
+
+    void acquireFromGL( CLCommandQueue queue, CLEvent[] wait_list=[], CLEvent event=null )
+    in{ assert( queue !is null ); } body
     {
         if( acquired ) return;
-        checkCall!clEnqueueAcquireGLObjects( command_queue.id, 1u, &id, 
-                0, cast(cl_event*)null, cast(cl_event*)null ); // TODO events
+        checkCall!clEnqueueAcquireGLObjects( queue.id, 1u, &id, 
+                cast(uint)wait_list.length,
+                amap!(a=>a.id)(wait_list).ptr,
+                event ? &(event.id) : null );
+        (cast(CLGLContext)context).registerAcquired( queue, this );
         acquired = true;
     }
 
-    void releaseToGL( CLCommandQueue command_queue )
+    void releaseToGL( CLCommandQueue queue, CLEvent[] wait_list=[], CLEvent event=null )
     {
         if( !acquired ) return;
-        checkCall!clEnqueueReleaseGLObjects( command_queue.id, 1u, &id, 
-                0, cast(cl_event*)null, cast(cl_event*)null ); // TODO events
+        checkCall!clEnqueueReleaseGLObjects( queue.id, 1u, &id, 
+                cast(uint)wait_list.length,
+                amap!(a=>a.id)(wait_list).ptr,
+                event ? &(event.id) : null );
         acquired = false;
     }
 }

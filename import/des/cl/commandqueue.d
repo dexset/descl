@@ -25,21 +25,21 @@ class CLCommandQueue : CLResource
         device = context.devices[devID];
         assert( device !is null );
         id = checkCode!clCreateCommandQueue( context.id, device.id, buildFlags(prop) );
-        updateProperties();
+        updateInfo();
     }
 
     void flush() { checkCall!clFlush(id); }
     void finish() { checkCall!clFinish(id); }
 
-    static private enum prop_list = 
+    static private enum info_list =
     [
         "size_t:properties"
     ];
 
-    mixin( infoProperties( "command_queue", "queue", prop_list ) );
+    mixin( infoMixin( "command_queue", "queue", info_list ) );
 
 protected:
 
     override void selfDestroy()
-    { checkCall!clReleaseCommandQueue(id); }
+    { checkCall!clRetainCommandQueue(id); }
 }

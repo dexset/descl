@@ -10,15 +10,18 @@ import des.cl.commandqueue;
 class CLMemory : CLResource
 {
 protected:
-    this( cl_mem mem_id, Type type, Flag[] flags )
+    this( CLContext context, cl_mem mem_id, Type type, Flag[] flags )
     {
         this.id = mem_id;
         this._type = type;
         this._flags = flags.dup;
+        this.context = context;
     }
 
 public:
     cl_mem id;
+
+    CLContext context;
 
     enum Type
     {
@@ -40,21 +43,17 @@ public:
         COPY_HOST_PTR  = CL_MEM_COPY_HOST_PTR
     }
 
-    static pure
-    {
-        ulong compileFlags( Flag[] flags... )
-        { return reduce!((r,f)=>r|=cast(ulong)f)(0UL,flags); }
-    }
-
     private Flag[] _flags;
     @property const(Flag[]) flags() const { return _flags; }
 
     static CLMemory createBuffer( CLContext context, Flag[] flags, size_t size, void* host_ptr=null )
     {
-        auto id = checkCode!clCreateBuffer( context.id, compileFlags(flags), size, host_ptr );
+        auto id = checkCode!clCreateBuffer( context.id, buildFlags(flags), size, host_ptr );
 
-        return new CLMemory( id, Type.BUFFER, flags );
+        return new CLMemory( context, id, Type.BUFFER, flags );
     }
+
+    // TODO: Image
 
     void readTo( CLCommandQueue command_queue, void[] buffer, size_t offset=0, bool blocking=true,
             CLEvent[] wait_list=[], CLEvent event=null )
@@ -93,5 +92,5 @@ public:
     // TODO: map
 
 protected:
-    override void selfDestroy() { checkCall!clReleaseMemObject(id); }
+    override void selfDestroy() { checkCall!clRetainMemObject(id); }
 }

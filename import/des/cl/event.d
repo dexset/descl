@@ -6,7 +6,11 @@ import des.cl.context;
 class CLEvent : CLResource
 {
 package:
-    this( cl_event ev_id ) { id = ev_id; }
+    this( cl_event ev_id )
+    {
+        id = ev_id;
+        updateInfo();
+    }
 
 public:
     cl_event id;
@@ -48,14 +52,14 @@ public:
         COMPLETE  = CL_COMPLETE
     }
 
-    static private enum prop_list = 
+    static private enum info_list =
     [
         "cl_command_type:CommandType:command_type",
         "cl_int:CommandExecutionStatus:command_execution_status"
     ];
 
-    mixin( infoProperties( "event", prop_list ) );
+    mixin( infoMixin( "event", info_list ) );
 
 protected:
-    override void selfDestroy() { checkCall!clReleaseEvent(id); }
+    override void selfDestroy() { checkCall!clRetainEvent(id); }
 }
