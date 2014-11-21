@@ -7,8 +7,8 @@
 	"importPaths": [ "import" ],
 	"sourcePaths": [ "import" ],
 	"dependencies": {
-        "descore": ">=1.0.7",
-        "des": ">=1.1.1",
+        "descore": ">=1.0.14",
+        "des": ">=1.1.3",
         "derelict_extras-opencl": ">=1.2.1"
 	}
 }
