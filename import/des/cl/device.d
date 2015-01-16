@@ -80,10 +80,70 @@ public:
         GLOBAL = CL_GLOBAL /// `CL_GLOBAL`
     }
 
-    /+
-        type:param_name,
-        cl_type:dlang_type:param_name
-    +/
+    /++ generate info properties
+     +
+     + Rules:
+     + ---
+     +      type:param_name
+     +      cl_type:dlang_type:param_name
+     + ---
+     + List:
+     + ---
+     +  uint:address_bits
+     +  uint:bool:available
+     +  uint:bool:compiler_available
+     +  ulong:double_fp_config // FPConfig
+     +  uint:bool:endian_little
+     +  uint:bool:error_correction_support
+     +  ulong:execution_capabilities
+     +  string:extensions
+     +  ulong:global_mem_cache_size
+     +  uint:MemCacheType:global_mem_cache_type
+     +  uint:global_mem_cacheline_size
+     +  ulong:global_mem_size
+     +  uint:bool:image_support
+     +  size_t:image2d_max_height
+     +  size_t:image2d_max_width
+     +  size_t:image3d_max_depth
+     +  size_t:image3d_max_height
+     +  size_t:image3d_max_width
+     +  ulong:local_mem_size
+     +  uint:local_mem_type
+     +  uint:max_clock_frequency
+     +  uint:max_compute_units
+     +  uint:max_constant_args
+     +  ulong:max_constant_buffer_size
+     +  ulong:max_mem_alloc_size
+     +  size_t:max_parameter_size
+     +  uint:max_read_image_args
+     +  uint:max_samplers
+     +  size_t:max_work_group_size
+     +  uint:max_work_item_dimensions
+     +  size_t[]:max_work_item_sizes
+     +  uint:max_write_image_args
+     +  uint:mem_base_addr_align
+     +  uint:min_data_type_align_size
+     +  string:name
+
+     +  uint:preferred_vector_width_char
+     +  uint:preferred_vector_width_short
+     +  uint:preferred_vector_width_int
+     +  uint:preferred_vector_width_long
+     +  uint:preferred_vector_width_float
+     +  uint:preferred_vector_width_double
+
+     +  string:profile
+     +  size_t:profiling_timer_resolution
+     +  ulong:queue_properties
+     +  ulong:single_fp_config // FPConfig
+     +  ulong:Type:type
+
+     +  string:vendor
+     +  uint:vendor_id
+     +  string:version // _version
+     +  string:!driver_version
+     + ---
+     +/
     static private enum info_list =
     [
         "uint:address_bits",

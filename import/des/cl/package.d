@@ -1,7 +1,6 @@
 module des.cl;
 
-public
-{
+public:
     import des.cl.base;
     import des.cl.platform;
     import des.cl.device;
@@ -11,4 +10,3 @@ public
     import des.cl.program;
     import des.cl.kernel;
     import des.cl.event;
-}

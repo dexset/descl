@@ -5,7 +5,7 @@ import des.cl.device;
 import des.cl.context;
 import des.cl.kernel;
 
-import des.util.string;
+import des.util.stdext.string;
 
 ///
 class CLProgram : CLResource
@@ -13,9 +13,10 @@ class CLProgram : CLResource
 protected:
 
     ///
-    this( cl_program p_id, string source )
+    this( cl_program p_id, CLContext ctx, string source )
     {
         this.id = p_id;
+        this.ctx = ctx;
         this.source = source;
     }
 
@@ -23,6 +24,9 @@ protected:
     CLDevice[] last_build_devices;
     ///
     string source;
+
+    ///
+    CLContext ctx;
 
 public:
     ///
@@ -39,7 +43,7 @@ public:
         auto id = checkCode!clCreateProgramWithSource( context.id, 1,
                      &buf, [source.length].ptr );
 
-        return new CLProgram( id, source );
+        return new CLProgram( id, context, source );
     }
 
     ///
@@ -54,7 +58,7 @@ public:
 
         if( retcode != CL_SUCCESS )
         {
-            log_error( "\n%s", buildInfo() );
+            logger.error( "\n%s", buildInfo() );
 
             throw new CLException( format( "'%s' return error code %d",
                         "clBuildProgram", retcode) );
@@ -64,10 +68,15 @@ public:
         kernel.destroy();
         foreach( kn; kernel_names )
             kernel[kn] = newEMM!CLKernel( this, kn );
-        log_info( "finded kernels: %(%s, %)", kernel.keys );
+        logger.info( "finded kernels: %(%s, %)", kernel.keys );
 
         return buildInfo();
     }
+
+    /// use devices from context
+    BuildInfo[] build( CLBuildOption[] options=[] )
+    { return build( ctx.devices, options ); }
+
 
     ///
     enum BuildStatus
@@ -130,7 +139,7 @@ protected:
     {
         if( options.length == 0 ) return null;
         auto opt_str = amap!(a=>a.toString)(options).join(" ");
-        log_info( opt_str );
+        logger.info( opt_str );
         return opt_str.toStringz;
     }
 
@@ -198,6 +207,28 @@ interface CLBuildOption
 
         private
         {
+            /++ generate static functions to return simple options
+                + Rules:
+                +   to camel case, first small
+                + Example:
+                + ---
+                +   single-precision-constant -> 
+                +   static @property CLBuildOption singlePrecisionConstant()
+                + ---
+                +
+                + List:
+                + ---
+                +  single-precision-constant
+                +  denorms-are-zero
+                +  opt-disable
+                +  strict-aliasing
+                +  mad-enable
+                +  no-signed-zeros
+                +  unsafe-math-optimizations
+                +  finite-math-only
+                +  fast-relaxed-math
+                + ---
+                +/
             enum string[] simple_cl_options =
             [
                 "single-precision-constant",

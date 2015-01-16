@@ -52,6 +52,19 @@ public:
         COMPLETE  = CL_COMPLETE  /// `CL_COMPLETE`
     }
 
+    /++ generate info properties
+     +
+     + Rules:
+     + ---
+     +      type:param_name
+     +      cl_type:dlang_type:param_name
+     + ---
+     + List:
+     + ---
+     +  cl_command_type:Type:command_type
+     +  cl_int:Status:command_execution_status
+     + ---
+     +/
     static private enum info_list =
     [
         "cl_command_type:Type:command_type",
@@ -60,6 +73,21 @@ public:
 
     mixin( infoMixin( "event", info_list ) );
 
+    /++ generate profile properties
+     +
+     + Rules:
+     + ---
+     +      type:param_name
+     +      cl_type:dlang_type:param_name
+     + ---
+     + List:
+     + ---
+     +  ulong:queued
+     +  ulong:submit
+     +  ulong:start
+     +  ulong:end
+     + ---
+     +/
     static private enum prof_list =
     [
         "ulong:queued",
@@ -72,6 +100,7 @@ public:
 
     ///
     bool isValid() @property const { return id != null; }
+
     /// `clRetainEvent`
     void reset() { if( isValid ) checkCall!clRetainEvent(id); }
 

@@ -57,7 +57,7 @@ public:
     ///
     static CLMemory createBuffer( CLContext context, Flag[] flags, size_t size, void* host_ptr=null )
     {
-        auto id = checkCode!clCreateBuffer( context.id, buildFlags(flags), size, host_ptr );
+        auto id = checkCode!clCreateBuffer( context.id, buildFlags(flags ~ (host_ptr?[Flag.USE_HOST_PTR]:[])), size, host_ptr );
 
         return new CLMemory( context, id, Type.BUFFER, flags );
     }

@@ -4,11 +4,15 @@ import des.cl.base;
 import des.cl.device;
 import des.cl.context;
 
+///
 class CLCommandQueue : CLResource
 {
+    ///
     cl_command_queue id;
 
+    ///
     CLContext context;
+    ///
     CLDevice device;
 
     ///
@@ -38,9 +42,21 @@ class CLCommandQueue : CLResource
     /// `clEnqueueBarrier`
     void barrier() { checkCall!clEnqueueBarrier(id); }
 
+    /++ generate info properties
+     +
+     + Rules:
+     + ---
+     +      type:param_name
+     +      cl_type:dlang_type:param_name
+     + ---
+     + List:
+     + ---
+     +  size_t:properties
+     + ---
+     +/
     static private enum info_list =
     [
-        "size_t:properties"
+        "size_t:properties" ///
     ];
 
     mixin( infoMixin( "command_queue", "queue", info_list ) );

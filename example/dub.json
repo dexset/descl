@@ -1,0 +1,14 @@
+{
+    "name": "example",
+    "description": "D Extended Set example",
+    "authors": ["Oleg Butko(deviator)", "Anton Akzhigitov(Akzwar)"],
+    "license": "MIT",
+    "targetPath": "bin",
+    "targetType": "executable",
+    "importPaths": [ "../import" ],
+    "sourcePaths": [ ".", "../import" ],
+    "dependencies": {
+        "descore": ">=1.1.1",
+        "derelict_extras-opencl": ">=1.2.1"
+    }
+}

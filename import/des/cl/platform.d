@@ -42,10 +42,22 @@ public:
         return buf;
     }
 
-    /+
-        type:param_name,
-        cl_type:dlang_type:param_name
-    +/
+    /++ generate info properties
+     +
+     + Rules:
+     + ---
+     +      type:param_name
+     +      cl_type:dlang_type:param_name
+     + ---
+     + List:
+     + ---
+     +  string:name
+     +  string:vendor
+     +  string:profile
+     +  string:version
+     +  string:extensions
+     + ---
+     +/
     static private enum info_list =
     [
         "string:name",

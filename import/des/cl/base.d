@@ -1,3 +1,7 @@
+/++ base classes, functions, public imports, 
+
+    `static this` load DerelictCL with version 1.1
+ +/
 module des.cl.base;
 
 public import derelict.opencl.cl;
@@ -15,7 +19,7 @@ package
     import des.util.logsys;
 }
 
-import des.util.string;
+import des.util.stdext.string;
 
 static this()
 {
@@ -26,6 +30,7 @@ static this()
 ///
 class CLException : Exception
 {
+    ///
     this( string msg, string file=__FILE__, size_t line=__LINE__ ) @safe pure nothrow
     { super( msg, file, line ); }
 }

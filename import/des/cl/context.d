@@ -6,12 +6,12 @@ import des.cl.platform;
 import des.cl.program;
 import des.cl.commandqueue;
 
-import des.util.string;
+import des.util.stdext.string;
 
 extern(C) void pfn_notify( const char* errinfo, const void* private_info, size_t cb, void* user_data )
 {
     auto nb = (cast(shared CLContext.NotifyBuffer)user_data);
-    nb.push( CLContext.Notify( toDString( errinfo ),
+    nb.push( CLContext.Notify( errinfo.toDString,
                 (cast(ubyte*)private_info)[0..cb].idup ) );
 }
 
@@ -94,6 +94,14 @@ public:
                                        &pfn_notify,
                                        cast(void*)notify_buffer );
     }
+
+    ///
+    this( size_t plID, size_t[] devIDs )
+    { this( CLPlatform.getAll()[plID], devIDs ); }
+
+    ///
+    this( size_t plID, CLDevice.Type type )
+    { this( CLPlatform.getAll()[plID], type ); }
 
     ///
     Notify[] pullNotifies() { return notify_buffer.clearGet(); }

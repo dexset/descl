@@ -2,6 +2,26 @@ module des.cl.helpers;
 
 import des.cl;
 
+/// full info about platform as AA
+string[string] getCLPlatformFullInfoAA( CLPlatform pl )
+{
+    string[string] ret;
+    ret["platform"] = pl.name;
+    ret["vendor"] = pl.vendor;
+    ret["profile"] = pl.profile;
+    ret["version"] = pl._version;
+    ret["ext"] = pl.extensions;
+    return ret;
+}
+
+/// full info about platform as string
+string getCLPlatformFullInfoString( CLPlatform pl, string fmt="", string sep="\n" )
+{
+    enum order = [ "platform", "vendor", "profile", "version", "ext", ];
+    return formatInfo( getCLPlatformFullInfoAA(pl), order, fmt, sep );
+}
+
+/// full info about device as AA
 string[string] getCLDeviceFullInfoAA( CLDevice dev )
 {
     string[string] ret;
@@ -42,7 +62,7 @@ string[string] getCLDeviceFullInfoAA( CLDevice dev )
     ret["max_samplers"              ] = format( "%s", dev.max_samplers );
     ret["max_work_group_size"       ] = format( "%s", dev.max_work_group_size );
     ret["max_work_item_dimensions"  ] = format( "%s", dev.max_work_item_dimensions );
-    ret["max_work_item_sizes"       ] = format( "%s", dev.max_work_item_sizes );
+    ret["max_work_item_sizes"       ] = format( "%s", dev.max_work_item_sizes[0 .. dev.max_work_item_dimensions] );
     ret["max_write_image_args"      ] = format( "%s", dev.max_write_image_args );
     ret["mem_base_addr_align"       ] = format( "%s", dev.mem_base_addr_align );
     ret["min_data_type_align_size"  ] = fmtsize( dev.min_data_type_align_size );
@@ -71,14 +91,9 @@ string fmtsize( size_t bytes )
     return format( "%.2f %s (%s)", size, sizes[k]~"b", ret );
 }
 
+/// full info about device as string
 string getCLDeviceFullInfoString( CLDevice dev, string fmt="", string sep="\n" )
 {
-    string[] ret;
-
-    if( fmt == "" ) fmt = "    %30 s : %s";
-
-    auto aa = getCLDeviceFullInfoAA( dev );
-
     enum infos =
     [
     "name", "type", "available", "compiler_available",
@@ -105,7 +120,17 @@ string getCLDeviceFullInfoString( CLDevice dev, string fmt="", string sep="\n" )
     "queue_properties", "driver_version"
     ];
 
-    foreach( n; infos ) ret ~= format( fmt, n, aa[n] );
+    return formatInfo( getCLDeviceFullInfoAA(dev), infos, fmt, sep );
+}
+
+string formatInfo( string[string] aa, string[] order, string fmt="", string sep="\n" )
+{
+    string[] ret;
+
+    if( fmt == "" ) fmt = " %30 s : %s";
+
+    foreach( n; order )
+        ret ~= format( fmt, n, aa[n] );
 
     return ret.join(sep);
 }
