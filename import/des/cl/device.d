@@ -3,13 +3,16 @@ module des.cl.device;
 import des.cl.base;
 import des.cl.platform;
 
+///
 class CLDevice : CLResource
 {
 protected:
+    ///
     CLPlatform platform;
     
     bool is_sub_device;
 
+    ///
     this( cl_device_id id, CLPlatform platform, bool sub_dev=false )
     {
         this.id = id;
@@ -19,16 +22,19 @@ protected:
     }
 
 public:
+    ///
     cl_device_id id;
 
+    ///
     enum Type
     {
-        CPU         = CL_DEVICE_TYPE_CPU,
-        GPU         = CL_DEVICE_TYPE_GPU,
-        ACCELERATOR = CL_DEVICE_TYPE_ACCELERATOR,
-        DEFAULT     = CL_DEVICE_TYPE_DEFAULT
+        CPU         = CL_DEVICE_TYPE_CPU, /// `CL_DEVICE_TYPE_CPU`
+        GPU         = CL_DEVICE_TYPE_GPU, /// `CL_DEVICE_TYPE_GPU`
+        ACCELERATOR = CL_DEVICE_TYPE_ACCELERATOR, /// `CL_DEVICE_TYPE_ACCELERATOR`
+        DEFAULT     = CL_DEVICE_TYPE_DEFAULT /// `CL_DEVICE_TYPE_DEFAULT`
     }
 
+    ///
     static CLDevice[] getAll( CLPlatform platform, Type type=Type.DEFAULT )
     {
         cl_uint nums;
@@ -42,33 +48,36 @@ public:
         return buf;
     }
 
+    ///
     enum FPConfig
     {
-        DENORM           = CL_FP_DENORM,
-        INF_NAN          = CL_FP_INF_NAN,
-        ROUND_TO_NEAREST = CL_FP_ROUND_TO_NEAREST,
-        ROUND_TO_ZERO    = CL_FP_ROUND_TO_ZERO,
-        ROUND_TO_INF     = CL_FP_ROUND_TO_INF,
-        FMA              = CL_FP_FMA
+        DENORM           = CL_FP_DENORM,          /// `CL_FP_DENORM`
+        INF_NAN          = CL_FP_INF_NAN,         /// `CL_FP_INF_NAN`
+        ROUND_TO_NEAREST = CL_FP_ROUND_TO_NEAREST,/// `CL_FP_ROUND_TO_NEAREST`
+        ROUND_TO_ZERO    = CL_FP_ROUND_TO_ZERO,   /// `CL_FP_ROUND_TO_ZERO`
+        ROUND_TO_INF     = CL_FP_ROUND_TO_INF,    /// `CL_FP_ROUND_TO_INF`
+        FMA              = CL_FP_FMA              /// `CL_FP_FMA`
     }
 
+    ///
     enum ExecCapabilities
     {
-        KERNEL        = CL_EXEC_KERNEL,
-        NATIVE_KERNEL = CL_EXEC_NATIVE_KERNEL
+        KERNEL        = CL_EXEC_KERNEL, /// `CL_EXEC_KERNEL`
+        NATIVE_KERNEL = CL_EXEC_NATIVE_KERNEL /// `CL_EXEC_NATIVE_KERNEL`
     }
 
+    ///
     enum MemCacheType
     {
-        NONE             = CL_NONE,
-        READ_ONLY_CACHE  = CL_READ_ONLY_CACHE,
-        READ_WRITE_CACHE = CL_READ_WRITE_CACHE
+        NONE             = CL_NONE,            /// `CL_NONE`
+        READ_ONLY_CACHE  = CL_READ_ONLY_CACHE, ///  CL_READ_ONLY_CACHE`
+        READ_WRITE_CACHE = CL_READ_WRITE_CACHE ///  CL_READ_WRITE_CACHE`
     }
 
     enum LocalMemTYPE
     {
-        LOCAL  = CL_LOCAL,
-        GLOBAL = CL_GLOBAL
+        LOCAL  = CL_LOCAL, /// `CL_LOCAL`
+        GLOBAL = CL_GLOBAL /// `CL_GLOBAL`
     }
 
     /+

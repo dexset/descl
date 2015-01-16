@@ -7,23 +7,31 @@ import des.cl.kernel;
 
 import des.util.string;
 
+///
 class CLProgram : CLResource
 {
 protected:
+
+    ///
     this( cl_program p_id, string source )
     {
         this.id = p_id;
         this.source = source;
     }
 
+    ///
     CLDevice[] last_build_devices;
+    ///
     string source;
 
 public:
+    ///
     cl_program id;
 
+    ///
     CLKernel[string] kernel;
 
+    ///
     static CLProgram createWithSource( CLContext context, string source )
     {
         char[] str = source.dup;
@@ -34,6 +42,7 @@ public:
         return new CLProgram( id, source );
     }
 
+    ///
     BuildInfo[] build( CLDevice[] devices, CLBuildOption[] options=[] )
     {
         last_build_devices = devices.dup;
@@ -60,23 +69,30 @@ public:
         return buildInfo();
     }
 
+    ///
     enum BuildStatus
     {
-        NONE        = CL_BUILD_NONE,
-        ERROR       = CL_BUILD_ERROR,
-        SUCCESS     = CL_BUILD_SUCCESS,
-        IN_PROGRESS = CL_BUILD_IN_PROGRESS
+        NONE        = CL_BUILD_NONE,       /// `CL_BUILD_NONE`
+        ERROR       = CL_BUILD_ERROR,      /// `CL_BUILD_ERROR`
+        SUCCESS     = CL_BUILD_SUCCESS,    /// `CL_BUILD_SUCCESS`
+        IN_PROGRESS = CL_BUILD_IN_PROGRESS /// `CL_BUILD_IN_PROGRESS`
     }
 
+    ///
     static struct BuildInfo
     {
+        ///
         CLDevice device;
+        ///
         BuildStatus status;
+        ///
         string log;
 
+        ///
         string toString() { return format( "%s for %s:\n%s", status, device.name, log ); }
     }
 
+    ///
     BuildInfo[] buildInfo()
     {
         BuildInfo[] ret;
@@ -109,6 +125,7 @@ protected:
 
     override void selfDestroy() { checkCall!clRetainProgram(id); }
 
+    ///
     auto getOptionsStringz( CLBuildOption[] options )
     {
         if( options.length == 0 ) return null;
@@ -117,6 +134,7 @@ protected:
         return opt_str.toStringz;
     }
 
+    ///
     BuildStatus buildStatus( CLDevice device )
     {
         cl_build_status val;
@@ -126,6 +144,7 @@ protected:
         return cast(BuildStatus)val;
     }
 
+    ///
     string buildLog( CLDevice device )
     {
         size_t len;
@@ -138,12 +157,15 @@ protected:
     }
 }
 
+///
 interface CLBuildOption
 {
+    ///
     string toString();
 
     static
     {
+        ///
         CLBuildOption define( string name, string val=null )
         {
             return new class CLBuildOption
@@ -153,18 +175,21 @@ interface CLBuildOption
             };
         }
 
+        ///
         CLBuildOption dir( string d )
         {
             return new class CLBuildOption
             { override string toString() { return format( "-I %s", d ); } };
         }
 
+        ///
         @property CLBuildOption inhibitAllWarningMessages()
         {
             return new class CLBuildOption
             { override string toString() { return "-w"; } };
         }
 
+        ///
         @property CLBuildOption makeAllWarningsIntoErrors()
         {
             return new class CLBuildOption

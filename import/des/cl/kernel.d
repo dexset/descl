@@ -11,16 +11,23 @@ import des.cl.program;
 
 import des.math.linear;
 
+///
 interface CLMemoryHandler
 {
-    protected @property CLMemory clmem();
-    protected @property void clmem( CLMemory );
+    protected @property
+    {
+        ///
+        CLMemory clmem();
+        ///
+        void clmem( CLMemory );
+    }
 
+    ///
     void setAsKernelArgCallback( CLCommandQueue );
 
-    static @property string getCLMemProperty()
+    ///
+    mixin template CLMemoryHandlerHelper()
     {
-        return `
         protected
         {
             CLMemory clmemory;
@@ -28,15 +35,18 @@ interface CLMemoryHandler
             @property void clmem( CLMemory m )
             in{ assert( m !is null ); } body
             { clmemory = m; }
-        }`;
+        }
     }
 }
 
+///
 class CLKernel : CLResource
 {
 public:
+    ///
     cl_kernel id;
 
+    ///
     this( CLProgram program, string nm )
     {
         k_name = nm;
@@ -44,29 +54,39 @@ public:
     }
 
     private string k_name;
-    @property string name() const { return k_name; }
+    ///
+    string name() @property const { return k_name; }
 
+    ///
     void setArgs(Args...)( Args args )
     {
         foreach( i, arg; args )
             setArg( i, arg );
     }
 
+    ///
     static struct CallParams
     {
+        ///
         CLCommandQueue queue;
+        ///
         CLEvent event;
+        ///
         size_t[] offset, size, loc_size;
 
+        ///
         void reset() { offset = []; size = []; loc_size = []; }
     }
 
+    ///
     CallParams params;
 
+    ///
     void setQueue( CLCommandQueue queue )
     in { assert( queue !is null ); } body
     { params.queue = queue; }
 
+    ///
     void setMinParams( CLCommandQueue queue, CLEvent event )
     in { assert( queue !is null ); } body
     {
@@ -74,6 +94,7 @@ public:
         params.event = event;
     }
 
+    ///
     void setParams( CLCommandQueue queue, CLEvent event, size_t[] offset,
                     size_t[] size, size_t[] loc_size=[] )
     in { assert( queue !is null ); } body
@@ -85,12 +106,14 @@ public:
         params.loc_size = loc_size.dup;
     }
 
+    ///
     void setSizes( size_t[] size, size_t[] loc_size=[] )
     {
         params.size = size.dup;
         params.loc_size = loc_size.dup;
     }
 
+    ///
     void exec( CLEvent[] wait_list=[] )
     in
     {
@@ -122,6 +145,7 @@ public:
                 (params.event is null ? null : &(params.event.id)) );
     }
 
+    ///
     void opCall(Args...)( size_t[] sz, size_t[] lsz, Args args )
     {
         setArgs( args );
@@ -129,6 +153,7 @@ public:
         exec();
     }
 
+    ///
     void opCall(Args...)( size_t[] sz, size_t[] lsz, CLEvent[] wlist, Args args )
     {
         setArgs( args );
@@ -136,6 +161,7 @@ public:
         exec( wlist );
     }
 
+    ///
     void setArg(Arg)( uint index, Arg arg )
     {
         void *value;
@@ -182,5 +208,4 @@ protected:
 
     override void selfDestroy()
     { checkCall!clRetainKernel(id); }
-
 }

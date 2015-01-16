@@ -10,9 +10,9 @@ package
     import std.algorithm;
     import std.array;
 
-    import des.util.emm;
-    import des.util.algo;
-    import des.util.logger;
+    import des.util.arch;
+    import des.util.stdext.algorithm;
+    import des.util.logsys;
 }
 
 import des.util.string;
@@ -23,27 +23,29 @@ static this()
     DerelictCL.reload(CLVersion.CL11);
 }
 
+///
 class CLException : Exception
 {
-    @safe pure nothrow this( string msg, string file=__FILE__, size_t line=__LINE__ )
+    this( string msg, string file=__FILE__, size_t line=__LINE__ ) @safe pure nothrow
     { super( msg, file, line ); }
 }
 
+///
 class CLResource : ExternalMemoryManager
 {
-    mixin DirectEMM;
-    protected abstract void selfDestroy();
+    mixin EMM;
 }
 
 package
 {
-
+    ///
     auto getIDsPtr(T)( T[] list... )
     { return amap!(a=>a.id)(list).ptr; }
 
     auto buildFlags(T)( T[] list... )
     { return reduce!((a,b)=>a|=b)(list); }
 
+    /// check error code and throw exception if not `CL_SUCCESS`
     void checkError( int code, string fnc_call, string file=__FILE__, size_t line=__LINE__ )
     {
         if( code == CL_SUCCESS ) return;
@@ -118,20 +120,30 @@ package
 
     }
 
+    ///
     string errorToDescription( string errname )
     { return (array( map!(a=>a.toLower)(errname.split("_")) )[1 .. $]).join(" ").idup; }
 
+    ///
     unittest
     {
         assert( errorToDescription("CL_INVALID_DEVICE_TYPE") == "invalid device type" );
     }
 
+    /++ check OpenCL `fnc` return value
+     + calls `fnc( args )`
+     +/
     void checkCall(alias fnc, string file=__FILE__, size_t line=__LINE__, Args...)( Args args )
     {
         auto fnc_call = (&fnc).stringof[2..$] ~ format( "(%( %(%c%),%) )", argsToString( args ) );
         checkError( fnc( args ), fnc_call, file, line );
     }
 
+    /++ check error code after fnc call
+     + calls `fnc( args, &retcode )`
+     + Returns:
+     + result of `fnc` call
+     +/
     auto checkCode(alias fnc, string file=__FILE__, size_t line=__LINE__, Args...)( Args args )
     out(v)
     {

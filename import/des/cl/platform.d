@@ -5,12 +5,14 @@ import des.cl.base;
 import des.cl.device;
 import des.cl.context;
 
+///
 class CLPlatform : ExternalMemoryManager
 {
-    mixin ParentEMM;
+    mixin EMM;
 
 private:
 
+    ///
     this( cl_platform_id pl_id )
     {
         this.id = pl_id;
@@ -21,10 +23,13 @@ private:
 
 public:
 
+    ///
     CLDevice[] devices;
 
+    ///
     cl_platform_id id;
 
+    ///
     static CLPlatform[] getAll()
     {
         cl_uint nums;

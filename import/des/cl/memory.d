@@ -7,9 +7,11 @@ import des.cl.context;
 import des.cl.event;
 import des.cl.commandqueue;
 
+///
 class CLMemory : CLResource
 {
 protected:
+    ///
     this( CLContext context, cl_mem mem_id, Type type, Flag[] flags )
     {
         this.id = mem_id;
@@ -19,33 +21,40 @@ protected:
     }
 
 public:
+    ///
     cl_mem id;
 
+    ///
     CLContext context;
 
+    ///
     enum Type
     {
-        BUFFER,
-        IMAGE2D,
-        IMAGE3D
+        BUFFER,  ///
+        IMAGE2D, ///
+        IMAGE3D  ///
     }
 
     private Type _type;
-    @property Type type() const { return _type; }
+    ///
+    Type type() @property const { return _type; }
 
+    ///
     enum Flag
     {
-        READ_WRITE     = CL_MEM_READ_WRITE,
-        WRITE_ONLY     = CL_MEM_WRITE_ONLY,
-        READ_ONLY      = CL_MEM_READ_ONLY,
-        USE_HOST_PTR   = CL_MEM_USE_HOST_PTR,
-        ALLOC_HOST_PTR = CL_MEM_ALLOC_HOST_PTR,
-        COPY_HOST_PTR  = CL_MEM_COPY_HOST_PTR
+        READ_WRITE     = CL_MEM_READ_WRITE,     /// `CL_MEM_READ_WRITE`
+        WRITE_ONLY     = CL_MEM_WRITE_ONLY,     /// `CL_MEM_WRITE_ONLY`
+        READ_ONLY      = CL_MEM_READ_ONLY,      /// `CL_MEM_READ_ONLY`
+        USE_HOST_PTR   = CL_MEM_USE_HOST_PTR,   /// `CL_MEM_USE_HOST_PTR`
+        ALLOC_HOST_PTR = CL_MEM_ALLOC_HOST_PTR, /// `CL_MEM_ALLOC_HOST_PTR`
+        COPY_HOST_PTR  = CL_MEM_COPY_HOST_PTR   /// `CL_MEM_COPY_HOST_PTR`
     }
 
     private Flag[] _flags;
-    @property const(Flag[]) flags() const { return _flags; }
+    ///
+    const(Flag[]) flags() @property const { return _flags; }
 
+    ///
     static CLMemory createBuffer( CLContext context, Flag[] flags, size_t size, void* host_ptr=null )
     {
         auto id = checkCode!clCreateBuffer( context.id, buildFlags(flags), size, host_ptr );
@@ -55,6 +64,7 @@ public:
 
     // TODO: Image
 
+    ///
     void readTo( CLCommandQueue command_queue, void[] buffer, size_t offset=0, bool blocking=true,
             CLEvent[] wait_list=[], CLEvent event=null )
     {
@@ -68,6 +78,7 @@ public:
                (event is null ? null : &(event.id)) );
     }
 
+    ///
     void[] read( CLCommandQueue command_queue, size_t size, size_t offset=0, bool blocking=true,
             CLEvent[] wait_list=[], CLEvent event=null )
     {
@@ -76,6 +87,7 @@ public:
         return buffer;
     }
 
+    ///
     void write( CLCommandQueue command_queue, void[] buffer, size_t offset=0, bool blocking=true,
             CLEvent[] wait_list=[], CLEvent event=null )
     {

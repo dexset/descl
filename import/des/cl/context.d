@@ -15,14 +15,19 @@ extern(C) void pfn_notify( const char* errinfo, const void* private_info, size_t
                 (cast(ubyte*)private_info)[0..cb].idup ) );
 }
 
+///
 class CLContext : CLResource
 {
+    ///
     static synchronized class NotifyBuffer
     {
+        ///
         Notify[] list;
 
+        ///
         void push( Notify n ) { list ~= n; }
 
+        ///
         Notify[] clearGet()
         {
             Notify[] ret;
@@ -33,21 +38,30 @@ class CLContext : CLResource
         }
     }
 
+    ///
     shared NotifyBuffer notify_buffer;
 
 public:
 
+    ///
     CLPlatform platform;
+
+    ///
     CLDevice[] devices;
 
+    ///
     static struct Notify
     {
+        ///
         string errinfo;
+        ///
         immutable(void)[] bininfo;
     }
 
+    ///
     cl_context id;
 
+    ///
     this( CLPlatform pl, size_t[] devIDs )
     {
         platform = pl;
@@ -65,6 +79,7 @@ public:
                                        cast(void*)notify_buffer );
     }
 
+    ///
     this( CLPlatform pl, CLDevice.Type type )
     {
         platform = pl;
@@ -80,8 +95,10 @@ public:
                                        cast(void*)notify_buffer );
     }
 
+    ///
     Notify[] pullNotifies() { return notify_buffer.clearGet(); }
 
+    ///
     CLProgram buildProgram( string src, CLBuildOption[] opt=[] )
     {
          auto prog = registerChildEMM( CLProgram.createWithSource( this, src ) );
@@ -89,6 +106,7 @@ public:
          return prog;
     }
 
+    ///
     CLCommandQueue createQueue( CLCommandQueue.Properties[] prop, size_t devNo=0 )
     in{ assert( devNo < devices.length ); } body
     { return newEMM!CLCommandQueue( this, devNo, prop ); }

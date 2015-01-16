@@ -1,5 +1,3 @@
-# D Extended Set CL wrap #
-
-## descl ##
+## D Extended Set CL wrap
 
 OpenCL objective wrap

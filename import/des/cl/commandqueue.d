@@ -11,13 +11,15 @@ class CLCommandQueue : CLResource
     CLContext context;
     CLDevice device;
 
+    ///
     enum Properties
     {
-        NONE = 0,
-        OUT_OF_ORDER = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
-        PROFILING = CL_QUEUE_PROFILING_ENABLE
+        NONE = 0, /// 0
+        OUT_OF_ORDER = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, /// `CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE`
+        PROFILING = CL_QUEUE_PROFILING_ENABLE /// `CL_QUEUE_PROFILING_ENABLE`
     }
 
+    ///
     this( CLContext ctx, size_t devID, Properties[] prop=[Properties.NONE] )
     in { assert( ctx !is null ); } body
     {
@@ -28,9 +30,12 @@ class CLCommandQueue : CLResource
         updateInfo();
     }
 
+    /// `clFlush`
     void flush() { checkCall!clFlush(id); }
+    /// `clFinish`
     void finish() { checkCall!clFinish(id); }
 
+    /// `clEnqueueBarrier`
     void barrier() { checkCall!clEnqueueBarrier(id); }
 
     static private enum info_list =
