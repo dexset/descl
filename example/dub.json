@@ -9,6 +9,6 @@
     "sourcePaths": [ ".", "../import" ],
     "dependencies": {
         "descore": ">=1.1.1",
-        "derelict_extras-opencl": ">=1.2.1"
+        "derelict-cl": ">=1.2.2"
     }
 }
