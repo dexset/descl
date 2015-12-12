@@ -1,0 +1,8 @@
+name "descl"
+description "D Extended Set OpenCL wraps"
+authors "Oleg Butko(deviator)" "Anton Akzhigitov(Akzwar)"
+license "MIT"
+targetType "sourceLibrary"
+dependency "desarch" version="~>0.3.0"
+dependency "derelict-cl" version=">=2.0.0"
+dependency "derelict-gl3" version=">=1.0.17"
