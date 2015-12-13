@@ -1,0 +1,3 @@
+name "example"
+targetType "executable"
+dependency "descl" path=".."

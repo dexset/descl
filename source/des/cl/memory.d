@@ -69,7 +69,7 @@ public:
         enforce( type == Type.BUFFER ); // TODO: images
 
         checkCallWL!clEnqueueReadBuffer( queue.id, id,
-               blocking, offset, 
+               blocking, offset,
                buffer.length, buffer.ptr, wait_list, event );
     }
 
