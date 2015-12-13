@@ -175,9 +175,5 @@ protected:
         }
 
         checkCall!clSetKernelArg( kernel.id, index, size, value );
-
-        debug(printkernelargs)
-            log_info( "set '%s' arg #%d: %s %s",
-                    Arg.stringof, index, size, value );
     }
 }
